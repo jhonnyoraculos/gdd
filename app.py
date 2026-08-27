@@ -9,7 +9,7 @@ import streamlit as st
 from components.app_shell import render_topbar
 from components.database_feedback import render_database_feedback
 from components.feedback import render_flash
-from components.navigation import build_navigation, get_entry_for_page, render_sidebar
+from components.navigation import current_page_spec, page_renderers, render_sidebar
 from config.settings import AppSettings, ConfigurationError, get_settings
 from services.database import (
     DatabaseHealth,
@@ -63,22 +63,22 @@ def main() -> None:
     load_styles(st.context.theme.type)
     health = _load_health()
 
-    entries = build_navigation(health, _retry_database)
-    current_page = st.navigation(
-        [entry.page for entry in entries],
+    root_page = st.navigation(
+        [st.Page(lambda: None, title="GDD Studio", url_path="", default=True)],
         position="hidden",
     )
-    current_entry = get_entry_for_page(entries, current_page)
+    root_page.run()
+    current_spec = current_page_spec()
 
-    render_sidebar(entries)
-    render_topbar(current_entry.spec.title, health)
+    render_sidebar(current_spec.key)
+    render_topbar(current_spec.title, health)
     render_flash()
 
-    if current_entry.spec.requires_database and not health.is_ready:
+    if current_spec.requires_database and not health.is_ready:
         render_database_feedback(health, _retry_database)
         st.stop()
 
-    current_page.run()
+    page_renderers(health, _retry_database)[current_spec.key]()
 
 
 main()

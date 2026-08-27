@@ -5,13 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
 
 import streamlit as st
 
 from pages import archived, editor, favorites, home, ideas, project, projects, recent, settings
 from services.database import DatabaseHealth
-from utils.navigation_state import register_navigation_pages
+from utils.navigation_state import go_to_page
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,12 +23,6 @@ class PageSpec:
     group: str
     requires_database: bool = True
     default: bool = False
-
-
-@dataclass(frozen=True, slots=True)
-class NavigationEntry:
-    spec: PageSpec
-    page: Any
 
 
 PAGE_SPECS: tuple[PageSpec, ...] = (
@@ -77,50 +70,31 @@ def _renderers(
     }
 
 
-def build_navigation(
+def page_renderers(
     health: DatabaseHealth,
     on_retry: Callable[[], None],
-) -> tuple[NavigationEntry, ...]:
-    renderers = _renderers(health, on_retry)
-    entries = tuple(
-        NavigationEntry(
-            spec=spec,
-            page=st.Page(
-                renderers[spec.key],
-                title=spec.title,
-                icon=spec.icon,
-                url_path=spec.url_path,
-                default=spec.default,
-            ),
-        )
-        for spec in PAGE_SPECS
-    )
-    register_navigation_pages({entry.spec.key: entry.page for entry in entries})
-    return entries
+) -> dict[str, Callable[[], None]]:
+    return _renderers(health, on_retry)
 
 
-def get_entry_for_page(
-    entries: tuple[NavigationEntry, ...],
-    current_page: Any,
-) -> NavigationEntry:
-    for entry in entries:
-        if entry.page.url_path == current_page.url_path:
-            return entry
-    return entries[0]
+def current_page_spec() -> PageSpec:
+    requested = st.query_params.get("view", "home")
+    return next((spec for spec in PAGE_SPECS if spec.key == requested), PAGE_SPECS[0])
 
 
-def _render_page_links(entries: tuple[NavigationEntry, ...], group: str) -> None:
-    for entry in entries:
-        if entry.spec.group == group:
-            st.page_link(
-                entry.page,
-                label=entry.spec.label,
-                icon=entry.spec.icon,
-                use_container_width=True,
-            )
+def _render_page_links(current_key: str, group: str) -> None:
+    for spec in PAGE_SPECS:
+        if spec.group == group and st.button(
+            spec.label,
+            key=f"nav-{spec.key}",
+            icon=spec.icon,
+            type="primary" if spec.key == current_key else "secondary",
+            use_container_width=True,
+        ):
+            go_to_page(spec.key)
 
 
-def render_sidebar(entries: tuple[NavigationEntry, ...]) -> None:
+def render_sidebar(current_key: str) -> None:
     with st.sidebar:
         st.html(
             '<div class="gdd-brand">'
@@ -133,11 +107,11 @@ def render_sidebar(entries: tuple[NavigationEntry, ...]) -> None:
         )
         with st.container(key="primary-navigation"):
             st.html('<div class="gdd-nav-label">Workspace</div>')
-            _render_page_links(entries, "workspace")
+            _render_page_links(current_key, "workspace")
             st.html('<div class="gdd-nav-label">Biblioteca</div>')
-            _render_page_links(entries, "library")
+            _render_page_links(current_key, "library")
 
         st.write("")
         with st.container(key="secondary-navigation"):
-            _render_page_links(entries, "system")
+            _render_page_links(current_key, "system")
         st.caption("Editor GDD · Etapa 3")

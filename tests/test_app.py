@@ -33,4 +33,4 @@ def test_app_starts_with_missing_or_invalid_configuration(
     app = AppTest.from_file(str(app_path), default_timeout=15).run()
 
     assert not app.exception
-    assert len(app.sidebar.get("page_link")) == 7
+    assert len(app.sidebar.get("button")) == 7
