@@ -6,6 +6,7 @@ Importing this package registers every table in :class:`models.base.Base`.
 from models.base import Base
 from models.chapter import Chapter
 from models.character import Character
+from models.character_relationship import CharacterRelationship
 from models.idea import Idea
 from models.note import Note
 from models.project import Project
@@ -21,6 +22,7 @@ from models.version import ProjectVersion
 __all__ = [
     "Base",
     "Character",
+    "CharacterRelationship",
     "Chapter",
     "GddSection",
     "Idea",

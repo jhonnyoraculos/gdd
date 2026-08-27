@@ -740,6 +740,153 @@
   overflow-wrap: anywhere;
 }
 
+[class*="st-key-character-relationships-"] {
+  background: var(--gdd-glass-strong);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-lg);
+  box-shadow: var(--gdd-shadow-sm), inset 0 1px 0 var(--gdd-glass-highlight);
+  margin: 1rem 0;
+  padding: clamp(1.15rem, 2.5vw, 1.7rem);
+}
+
+.gdd-relationship-heading h2 {
+  color: var(--gdd-text);
+  font-size: 1.25rem;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+.gdd-relationship-heading p,
+.gdd-relationship-group-empty,
+.gdd-relationship-empty p {
+  color: var(--gdd-text-secondary);
+  line-height: 1.5;
+  margin: 0.35rem 0 0;
+}
+
+.gdd-relationship-metrics {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.gdd-relationship-metrics > div {
+  background: color-mix(in srgb, var(--gdd-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gdd-accent) 16%, transparent);
+  border-radius: var(--gdd-radius-sm);
+  min-width: 0;
+  padding: 0.85rem 0.95rem;
+}
+
+.gdd-relationship-metrics span,
+.gdd-relationship-direction {
+  color: var(--gdd-text-muted);
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.gdd-relationship-metrics strong {
+  color: var(--gdd-text);
+  display: block;
+  font-size: 1.08rem;
+  margin-top: 0.28rem;
+}
+
+.gdd-relationship-empty {
+  background: color-mix(in srgb, var(--gdd-surface) 62%, transparent);
+  border: 1px dashed var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-sm);
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.gdd-relationship-empty strong {
+  color: var(--gdd-text);
+}
+
+[class*="st-key-relationship-group-"] {
+  margin-top: 1.15rem;
+}
+
+.gdd-relationship-group-title {
+  color: var(--gdd-text);
+  font-size: 1rem;
+  margin: 0 0 0.7rem;
+}
+
+[class*="st-key-relationship-card-"] {
+  background: color-mix(in srgb, var(--gdd-surface) 66%, transparent);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-sm);
+  margin-bottom: 0.75rem;
+  min-width: 0;
+  padding: 0.95rem;
+}
+
+.gdd-relationship-path {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.gdd-relationship-path strong {
+  color: var(--gdd-text);
+  overflow-wrap: anywhere;
+}
+
+.gdd-relationship-path span {
+  color: var(--gdd-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.gdd-relationship-related {
+  color: var(--gdd-text-muted);
+  font-size: 0.75rem;
+  margin: 0.35rem 0 0;
+}
+
+.gdd-relationship-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.gdd-relationship-metadata:empty {
+  display: none;
+}
+
+.gdd-relationship-metadata span {
+  background: color-mix(in srgb, var(--gdd-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gdd-accent) 18%, transparent);
+  border-radius: 999px;
+  color: var(--gdd-text-secondary);
+  font-size: 0.7rem;
+  padding: 0.24rem 0.52rem;
+}
+
+.gdd-relationship-description {
+  color: var(--gdd-text-secondary);
+  font-size: 0.83rem;
+  line-height: 1.5;
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+[class*="st-key-relationship-actions-"] {
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
 .gdd-appearance-metrics {
   display: grid;
   gap: 0.75rem;

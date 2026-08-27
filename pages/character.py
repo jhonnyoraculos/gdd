@@ -13,6 +13,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from components.cards import render_empty_state
 from components.character_form import show_edit_character_dialog
 from components.feedback import set_flash
+from components.relationship_forms import (
+    show_create_relationship_dialog,
+    show_delete_relationship_dialog,
+    show_edit_relationship_dialog,
+)
 from config.settings import get_settings
 from services.appearance_service import (
     AppearanceServiceError,
@@ -27,6 +32,12 @@ from services.character_service import (
     get_character,
 )
 from services.project_service import ProjectNotFoundError, get_project
+from services.relationship_service import (
+    CharacterRelationshipIndex,
+    CharacterRelationshipSummary,
+    RelationshipServiceError,
+    list_character_relationships,
+)
 from services.user_service import OwnerIdentity, owner_from_settings
 from utils.navigation_state import go_to_page
 
@@ -284,19 +295,179 @@ def _appearances(timeline: CharacterTimeline, project_id: UUID) -> None:
         go_to_page("narrative", project=str(project_id))
 
 
+def _relationship_card(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    relationship: CharacterRelationshipSummary,
+    *,
+    direction: str,
+) -> None:
+    is_outgoing = direction == "outgoing"
+    related_id = (
+        relationship.target_character_id if is_outgoing else relationship.source_character_id
+    )
+    related_name = relationship.target_name if is_outgoing else relationship.source_name
+    related_role = relationship.target_role if is_outgoing else relationship.source_role
+    direction_label = "Iniciada" if is_outgoing else "Recebida"
+    metadata = "".join(
+        f"<span>{escape(value)}</span>"
+        for value in (
+            relationship.relationship_status,
+            f"Intensidade {relationship.intensity}/5" if relationship.intensity else None,
+        )
+        if value
+    )
+    with st.container(key=f"relationship-card-{direction}-{relationship.id}", border=False):
+        st.html(
+            '<div class="gdd-relationship-card__content">'
+            f'<span class="gdd-relationship-direction">{direction_label}</span>'
+            '<div class="gdd-relationship-path">'
+            f"<strong>{escape(relationship.source_name)}</strong>"
+            f"<span>— {escape(relationship.relationship_type)} →</span>"
+            f"<strong>{escape(relationship.target_name)}</strong>"
+            "</div>"
+            f'<p class="gdd-relationship-related">{escape(related_role or "Papel a definir")}</p>'
+            f'<div class="gdd-relationship-metadata">{metadata}</div>'
+            f'<p class="gdd-relationship-description">'
+            f"{_text(relationship.description or 'Sem descrição adicional.')}</p>"
+            "</div>"
+        )
+        with st.container(
+            key=f"relationship-actions-{direction}-{relationship.id}",
+            horizontal=True,
+        ):
+            if st.button(
+                f"Abrir {related_name}",
+                icon=":material/person:",
+                key=f"open-relationship-{direction}-{relationship.id}",
+            ):
+                go_to_page(
+                    "character_detail",
+                    project=str(project_id),
+                    id=str(related_id),
+                )
+            if st.button(
+                "Editar",
+                icon=":material/edit:",
+                key=f"edit-relationship-{direction}-{relationship.id}",
+            ):
+                show_edit_relationship_dialog(owner, project_id, relationship)
+            if st.button(
+                "Excluir",
+                icon=":material/link_off:",
+                key=f"delete-relationship-{direction}-{relationship.id}",
+            ):
+                show_delete_relationship_dialog(owner, project_id, relationship)
+
+
+def _relationship_group(
+    title: str,
+    empty_message: str,
+    owner: OwnerIdentity,
+    project_id: UUID,
+    items: tuple[CharacterRelationshipSummary, ...],
+    *,
+    direction: str,
+) -> None:
+    with st.container(key=f"relationship-group-{direction}", border=False):
+        st.html(f'<h3 class="gdd-relationship-group-title">{escape(title)}</h3>')
+        if not items:
+            st.html(f'<p class="gdd-relationship-group-empty">{escape(empty_message)}</p>')
+            return
+        columns = st.columns(2)
+        for index, relationship in enumerate(items):
+            with columns[index % 2]:
+                _relationship_card(
+                    owner,
+                    project_id,
+                    relationship,
+                    direction=direction,
+                )
+
+
+def _relationships(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    character: CharacterDetails,
+    index: CharacterRelationshipIndex,
+) -> None:
+    with st.container(key=f"character-relationships-{character.id}", border=False):
+        heading, action = st.columns([3, 1], vertical_alignment="center")
+        with heading:
+            st.html(
+                '<div class="gdd-relationship-heading">'
+                "<h2>Relacionamentos</h2>"
+                "<p>Conexões direcionais deste personagem dentro da história.</p>"
+                "</div>"
+            )
+        with action:
+            if st.button(
+                "Nova relação",
+                icon=":material/add_link:",
+                type="primary",
+                use_container_width=True,
+                key=f"new-relationship-{character.id}",
+            ):
+                show_create_relationship_dialog(
+                    owner,
+                    project_id,
+                    character.id,
+                    character.name,
+                    index,
+                )
+
+        st.html(
+            '<div class="gdd-relationship-metrics">'
+            f"<div><span>Total</span><strong>{index.total}</strong></div>"
+            f"<div><span>Iniciadas</span><strong>{len(index.outgoing)}</strong></div>"
+            f"<div><span>Recebidas</span><strong>{len(index.incoming)}</strong></div>"
+            "</div>"
+        )
+        if not index.total:
+            st.html(
+                '<div class="gdd-relationship-empty">'
+                "<strong>Nenhuma relação cadastrada</strong>"
+                "<p>Conecte este personagem a aliados, rivais, familiares ou outras figuras.</p>"
+                "</div>"
+            )
+            return
+
+        _relationship_group(
+            "Relações iniciadas",
+            "Este personagem ainda não inicia nenhuma relação.",
+            owner,
+            project_id,
+            index.outgoing,
+            direction="outgoing",
+        )
+        _relationship_group(
+            "Relações recebidas",
+            "Nenhuma relação aponta para este personagem.",
+            owner,
+            project_id,
+            index.incoming,
+            direction="incoming",
+        )
+
+
 @st.dialog("Excluir personagem", icon=":material/delete_forever:")
 def _confirm_delete(
     owner: OwnerIdentity,
     character: CharacterDetails,
     appearance_count: int,
+    relationship_count: int,
 ) -> None:
     appearance_label = (
         f"{appearance_count} aparição" if appearance_count == 1 else f"{appearance_count} aparições"
     )
+    relationship_label = (
+        f"{relationship_count} relacionamento"
+        if relationship_count == 1
+        else f"{relationship_count} relacionamentos"
+    )
     st.warning(
-        f"Excluir {character.name}? Esta ação é permanente. "
-        f"{appearance_label} "
-        "também será removida por integridade do banco."
+        f"Excluir {character.name}? Esta ação é permanente. O personagem possui "
+        f"{appearance_label} e {relationship_label}. Todas essas conexões serão removidas."
     )
     confirmation = st.text_input(
         f'Digite "{character.name}" para confirmar',
@@ -333,7 +504,13 @@ def render() -> None:
         get_project(owner, project_id)
         character = get_character(owner, project_id, character_id)
         timeline = get_character_timeline(owner, project_id, character_id)
-    except (ProjectNotFoundError, CharacterNotFoundError, AppearanceServiceError):
+        relationships = list_character_relationships(owner, project_id, character_id)
+    except (
+        ProjectNotFoundError,
+        CharacterNotFoundError,
+        AppearanceServiceError,
+        RelationshipServiceError,
+    ):
         render_empty_state("?", "Personagem não encontrado", "A ficha pode ter sido removida.")
         if st.button("Voltar aos personagens", use_container_width=True):
             go_to_page("characters", project=str(project_id))
@@ -352,8 +529,9 @@ def render() -> None:
         if st.button("Editar", icon=":material/edit:"):
             show_edit_character_dialog(owner, character)
         if st.button("Excluir", icon=":material/delete:"):
-            _confirm_delete(owner, character, timeline.total)
+            _confirm_delete(owner, character, timeline.total, relationships.total)
 
     _hero(character)
+    _relationships(owner, project_id, character, relationships)
     _appearances(timeline, project_id)
     _profile(character)

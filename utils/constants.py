@@ -52,5 +52,27 @@ CHARACTER_ROLES: tuple[str, ...] = (
     "Personagem secundário",
 )
 
+RELATIONSHIP_TYPES: tuple[str, ...] = (
+    "Família",
+    "Amigo",
+    "Aliado",
+    "Inimigo",
+    "Rival",
+    "Mentor",
+    "Interesse amoroso",
+    "Conhecido",
+    "Chefe",
+    "Subordinado",
+)
+
+RELATIONSHIP_STATUSES: tuple[str, ...] = (
+    "Ativa",
+    "Em evolução",
+    "Tensa",
+    "Secreta",
+    "Rompida",
+    "Encerrada",
+)
+
 DEFAULT_ACCENT_COLOR = "#7C5CFC"
 INITIAL_SCHEMA_REVISION = "0001_initial_schema"

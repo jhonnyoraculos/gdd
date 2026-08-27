@@ -99,8 +99,22 @@
   }
 
   .gdd-appearance-metrics,
-  .gdd-appearance-chapters {
+  .gdd-appearance-chapters,
+  .gdd-relationship-metrics {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  [class*="st-key-character-relationships-"] {
+    padding: 1rem;
+  }
+
+  [class*="st-key-relationship-group-"] [data-testid="stHorizontalBlock"] {
+    flex-direction: column;
+  }
+
+  [class*="st-key-relationship-group-"] [data-testid="stColumn"] {
+    min-width: 100%;
+    width: 100%;
   }
 
   .st-key-gdd-outline,

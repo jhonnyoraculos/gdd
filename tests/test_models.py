@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy import Engine, inspect
 from sqlalchemy.exc import IntegrityError
 
-from models import Base, Character, GddSection, Project, User
+from models import Base, Character, CharacterRelationship, GddSection, Project, User
 from services.database import session_scope
 
 EXPECTED_TABLES = {
@@ -27,6 +27,7 @@ EXPECTED_TABLES = {
     "chapters",
     "scenes",
     "scene_characters",
+    "character_relationships",
 }
 
 
@@ -148,3 +149,36 @@ def test_characters_are_deleted_with_their_project(sqlite_engine: Engine) -> Non
 
     with session_scope(sqlite_engine) as session:
         assert session.query(Character).count() == 0
+
+
+def test_character_relationship_model_enforces_project_pair_integrity(
+    sqlite_engine: Engine,
+) -> None:
+    with session_scope(sqlite_engine) as session:
+        user = User(
+            name="Criador",
+            email="relationships@example.com",
+            email_normalized="relationships@example.com",
+        )
+        project = Project(user=user, name="Projeto")
+        source = Character(project=project, name="Origem", normalized_name="origem")
+        target = Character(project=project, name="Destino", normalized_name="destino")
+        session.add_all([user, project, source, target])
+        session.flush()
+        session.add(
+            CharacterRelationship(
+                project_id=project.id,
+                source_character_id=source.id,
+                target_character_id=target.id,
+                relationship_type="Aliado",
+                intensity=4,
+                relationship_status="Ativa",
+            )
+        )
+
+    with session_scope(sqlite_engine) as session:
+        relationship = session.query(CharacterRelationship).one()
+        assert relationship.relationship_type == "Aliado"
+        assert relationship.intensity == 4
+        assert relationship.relationship_status == "Ativa"
+        assert relationship.revision == 1
