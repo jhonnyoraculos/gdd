@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
-from contextvars import ContextVar
 from typing import Any
 
 import streamlit as st
 
-_ROOT_PAGE: ContextVar[Any] = ContextVar("gdd_root_page")
+_ROOT_PAGE_KEY = "_gdd_root_page"
 
 
 def set_root_page(page: Any) -> None:
-    _ROOT_PAGE.set(page)
+    st.session_state[_ROOT_PAGE_KEY] = page
 
 
 def go_to_page(key: str, **query_params: str) -> None:
-    st.switch_page(_ROOT_PAGE.get(), query_params={"view": key, **query_params})
+    root_page = st.session_state.get(_ROOT_PAGE_KEY)
+    if root_page is None:
+        st.query_params.clear()
+        st.query_params.update({"view": key, **query_params})
+        st.rerun(scope="app")
+    st.switch_page(root_page, query_params={"view": key, **query_params})
