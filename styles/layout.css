@@ -1,0 +1,93 @@
+.block-container {
+  width: min(100%, var(--gdd-content-width));
+  padding: 4.75rem 2.15rem 4rem;
+}
+
+.gdd-topbar {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  min-width: 0;
+}
+
+.gdd-topbar__context {
+  min-width: 0;
+}
+
+.gdd-topbar__eyebrow {
+  color: var(--gdd-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.22rem;
+  text-transform: uppercase;
+}
+
+.gdd-topbar__title {
+  color: var(--gdd-text);
+  font-size: clamp(1.08rem, 2vw, 1.35rem);
+  font-weight: 690;
+  letter-spacing: -0.025em;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gdd-hero {
+  margin: clamp(0.75rem, 2vw, 1.4rem) 0 2rem;
+  max-width: 780px;
+}
+
+.gdd-hero__kicker {
+  color: var(--gdd-accent);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+}
+
+.gdd-hero h1 {
+  color: var(--gdd-text);
+  font-size: clamp(2.3rem, 6vw, 4.9rem);
+  font-weight: 720;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.gdd-hero p {
+  color: var(--gdd-text-secondary);
+  font-size: clamp(1rem, 2vw, 1.22rem);
+  line-height: 1.65;
+  margin: 1.2rem 0 0;
+  max-width: 620px;
+}
+
+.gdd-section-heading {
+  margin: 2.2rem 0 1rem;
+}
+
+.gdd-section-heading h2 {
+  font-size: clamp(1.25rem, 2vw, 1.55rem);
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+.gdd-section-heading p {
+  color: var(--gdd-text-secondary);
+  margin: 0.45rem 0 0;
+}
+
+.gdd-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gdd-step-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

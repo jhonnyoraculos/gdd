@@ -1,0 +1,72 @@
+/* Cosmetic Streamlit integration. Functionality never depends on these selectors. */
+[data-testid="stSidebar"] {
+  background: color-mix(in srgb, var(--gdd-surface) 86%, transparent);
+  border-right: 1px solid var(--gdd-glass-border);
+}
+
+[data-testid="stHeader"] {
+  background: color-mix(in srgb, var(--gdd-background) 88%, transparent);
+  border-bottom: 1px solid var(--gdd-glass-border);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"] svg {
+  color: var(--gdd-text);
+  fill: currentColor;
+}
+
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+  padding-top: 1.2rem;
+}
+
+.st-key-primary-navigation a,
+.st-key-secondary-navigation a {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--gdd-text-secondary);
+  min-height: 44px;
+  padding: 0.58rem 0.72rem;
+  transition: background var(--gdd-transition), border-color var(--gdd-transition), color var(--gdd-transition);
+}
+
+.st-key-primary-navigation a p,
+.st-key-primary-navigation a span,
+.st-key-primary-navigation a svg,
+.st-key-secondary-navigation a p,
+.st-key-secondary-navigation a span,
+.st-key-secondary-navigation a svg {
+  color: inherit;
+  fill: currentColor;
+}
+
+.st-key-primary-navigation a:hover,
+.st-key-secondary-navigation a:hover {
+  background: color-mix(in srgb, var(--gdd-text) 5%, transparent);
+  color: var(--gdd-text);
+}
+
+.st-key-primary-navigation a[aria-current="page"],
+.st-key-secondary-navigation a[aria-current="page"] {
+  background: color-mix(in srgb, var(--gdd-accent) 13%, transparent);
+  border-color: color-mix(in srgb, var(--gdd-accent) 20%, transparent);
+  color: var(--gdd-text);
+  font-weight: 650;
+}
+
+.stButton > button {
+  border-radius: 12px;
+  min-height: 44px;
+  transition: box-shadow var(--gdd-transition), transform var(--gdd-transition);
+}
+
+@media (hover: hover) {
+  .stButton > button:hover {
+    transform: translateY(-1px);
+  }
+}
+
+[data-testid="stAlert"] {
+  border-radius: var(--gdd-radius-md);
+}

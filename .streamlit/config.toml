@@ -1,0 +1,56 @@
+[server]
+headless = true
+runOnSave = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showSidebarNavigation = false
+showErrorDetails = "none"
+showErrorLinks = false
+toolbarMode = "viewer"
+
+[theme]
+base = "dark"
+primaryColor = "#8B6CFF"
+backgroundColor = "#0B0C10"
+secondaryBackgroundColor = "#16171E"
+textColor = "#F4F4F7"
+borderColor = "#2A2C36"
+font = "sans serif"
+
+[theme.sidebar]
+backgroundColor = "#111218"
+secondaryBackgroundColor = "#1A1B23"
+textColor = "#F4F4F7"
+primaryColor = "#9B83FF"
+borderColor = "#292B34"
+
+[theme.light]
+primaryColor = "#6847E8"
+backgroundColor = "#F1F2F6"
+secondaryBackgroundColor = "#E8E9EF"
+textColor = "#1C1D24"
+borderColor = "#D7D8E0"
+
+[theme.light.sidebar]
+backgroundColor = "#E9EAF0"
+secondaryBackgroundColor = "#E1E2E9"
+textColor = "#1C1D24"
+primaryColor = "#6242DB"
+borderColor = "#D1D2DA"
+
+[theme.dark]
+primaryColor = "#8B6CFF"
+backgroundColor = "#0B0C10"
+secondaryBackgroundColor = "#16171E"
+textColor = "#F4F4F7"
+borderColor = "#2A2C36"
+
+[theme.dark.sidebar]
+backgroundColor = "#111218"
+secondaryBackgroundColor = "#1A1B23"
+textColor = "#F4F4F7"
+primaryColor = "#9B83FF"
+borderColor = "#292B34"

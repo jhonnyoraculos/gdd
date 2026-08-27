@@ -1,0 +1,33 @@
+.gdd-card,
+.gdd-step,
+.gdd-empty-state,
+.gdd-database-panel {
+  background: var(--gdd-glass-strong);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-lg);
+  box-shadow: var(--gdd-shadow-sm), inset 0 1px 0 var(--gdd-glass-highlight);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gdd-card,
+  .gdd-step,
+  .gdd-empty-state,
+  .gdd-database-panel,
+  .gdd-status-pill {
+    background: var(--gdd-glass-bg);
+    -webkit-backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
+    backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
+  }
+}
+
+@media (hover: hover) {
+  .gdd-card {
+    transition: border-color var(--gdd-transition), box-shadow var(--gdd-transition), transform var(--gdd-transition);
+  }
+
+  .gdd-card:hover {
+    border-color: color-mix(in srgb, var(--gdd-accent) 28%, var(--gdd-glass-border));
+    box-shadow: var(--gdd-shadow-lg), inset 0 1px 0 var(--gdd-glass-highlight);
+    transform: translateY(-2px);
+  }
+}

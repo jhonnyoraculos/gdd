@@ -1,0 +1,36 @@
+@media (max-width: 900px) {
+  .gdd-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .block-container {
+    padding: 4.5rem 1rem 5rem;
+  }
+
+  .gdd-topbar {
+    display: none;
+  }
+
+  .gdd-hero {
+    margin-top: 0.6rem;
+  }
+
+  .gdd-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gdd-empty-state {
+    margin: 1.5rem auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,40 @@
+html {
+  scroll-behavior: smooth;
+}
+
+body,
+[data-testid="stAppViewContainer"] {
+  color: var(--gdd-text);
+}
+
+.stApp {
+  background:
+    radial-gradient(circle at 84% 8%, color-mix(in srgb, var(--gdd-accent) 8%, transparent), transparent 28rem),
+    radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--gdd-accent) 5%, transparent), transparent 30rem),
+    var(--gdd-background);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--gdd-accent) 42%, transparent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gdd-accent) 35%, transparent);
+}

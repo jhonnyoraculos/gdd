@@ -1,0 +1,12 @@
+:root {
+  --gdd-accent: #8b6cff;
+  --gdd-background: #0b0c10;
+  --gdd-surface: #16171e;
+  --gdd-text: #f4f4f7;
+  --gdd-text-secondary: rgba(244, 244, 247, 0.68);
+  --gdd-text-muted: rgba(244, 244, 247, 0.5);
+  --gdd-glass-bg: rgba(22, 23, 30, 0.76);
+  --gdd-glass-strong: rgba(22, 23, 30, 0.92);
+  --gdd-glass-border: rgba(244, 244, 247, 0.13);
+  --gdd-glass-highlight: rgba(255, 255, 255, 0.07);
+}

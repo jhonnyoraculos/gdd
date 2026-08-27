@@ -1,0 +1,14 @@
+:root {
+  --gdd-accent: #6847e8;
+  --gdd-background: #f1f2f6;
+  --gdd-surface: #e8e9ef;
+  --gdd-text: #1c1d24;
+  --gdd-text-secondary: rgba(28, 29, 36, 0.68);
+  --gdd-text-muted: rgba(28, 29, 36, 0.5);
+  --gdd-glass-bg: rgba(255, 255, 255, 0.62);
+  --gdd-glass-strong: rgba(255, 255, 255, 0.84);
+  --gdd-glass-border: rgba(35, 36, 45, 0.11);
+  --gdd-glass-highlight: rgba(255, 255, 255, 0.78);
+  --gdd-shadow-sm: 0 8px 24px rgba(53, 48, 76, 0.07);
+  --gdd-shadow-lg: 0 24px 70px rgba(53, 48, 76, 0.12);
+}
