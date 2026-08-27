@@ -86,3 +86,7 @@
 [class*="st-key-project-card-"] .stButton > button {
   min-height: 40px;
 }
+
+[class*="st-key-character-card-"] .stButton > button {
+  min-height: 40px;
+}

@@ -1,6 +1,6 @@
 # GDD Studio
 
-Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. Esta entrega cobre as **Etapas 1, 2 e 3**: fundação, projetos e editor hierárquico do GDD.
+Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. A aplicação inclui fundação, projetos, editor hierárquico do GDD e a Etapa 1 do sistema Personagens + Árvore Narrativa.
 
 ## O que já está pronto
 
@@ -22,6 +22,9 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Editor Markdown com modos Editar/Visualizar, status e progresso automático.
 - Autosave ao pausar/sair do campo, botão Salvar agora e controle otimista de revisão.
 - Ordenação segura por botões Subir/Descer e exclusão em cascata confirmada.
+- Biblioteca de personagens por projeto com pesquisa, filtro por papel, ordenação e cards responsivos.
+- Ficha completa com identificação, visão geral, história, personalidade, objetivos, arco narrativo, aparência e gameplay.
+- CRUD de personagens isolado por proprietário e projeto, nomes únicos e controle otimista de revisão.
 
 O editor do GDD e os módulos seguintes permanecem separados para as próximas etapas, sem dados mockados.
 
@@ -145,6 +148,7 @@ models/                   # modelos SQLAlchemy
 services/database.py      # engine, sessões, health check e migration
 services/project_service.py # CRUD e consultas de projetos filtradas pelo dono
 services/gdd_service.py     # hierarquia, editor, autosave e ordenação
+services/character_service.py # CRUD e consultas de personagens
 pages/                    # rotas pequenas e independentes
 styles/                   # design system CSS separado
 migrations/               # evolução versionada do PostgreSQL
@@ -164,6 +168,7 @@ tests/                    # testes rápidos isolados
 - `project_tags`, `section_tags`, `note_tags`, `idea_tags`, `reference_tags`
 - `project_versions`
 - `roadmap_items`
+- `characters` (fichas completas vinculadas ao projeto)
 
 Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snapshots usam JSONB no PostgreSQL. Seções, notas e itens de roadmap possuem revisão otimista para preparar o autosave sem sobrescritas silenciosas.
 
@@ -172,10 +177,12 @@ Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snap
 - Ainda não há autenticação. Não publique o app sem proteção externa até a camada de usuários estar implementada.
 - Até lá, o banco não impede sozinho uma associação de tag entre proprietários diferentes; os serviços multiusuário deverão validar ownership em toda escrita, com constraints/RLS em uma migration futura.
 - Capas usam uma URL pública; upload de arquivos exigirá armazenamento de objetos em uma etapa futura.
+- Retratos de personagens usam URL pública; upload direto ainda não possui armazenamento de objetos.
+- Capítulos, cenas, aparições, relações entre personagens e mapa narrativo pertencem às próximas etapas do novo sistema.
 - O autosave ocorre quando o Streamlit sincroniza o campo — ao pausar/sair dele ou usar Ctrl+Enter — evitando uma escrita por tecla.
 - Não há dados demonstrativos nem persistência local alternativa.
 - A conexão real e a migration no Neon precisam de credenciais fornecidas por você.
 
-## Próxima etapa
+## Próxima etapa do sistema narrativo
 
-A **Etapa 4 — Dashboard** deve conectar a Home aos projetos reais, mostrando recentes, progresso, totais e última edição.
+A **Etapa 2 — Estrutura narrativa** adicionará capítulos e cenas sem criar uma estrutura concorrente com o GDD existente.

@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 from sqlalchemy import Engine, select
 
-from models import GddSection, Project, User
+from models import Character, GddSection, Project, User
 from services.database import session_scope
 from services.project_service import (
     ProjectInput,
@@ -120,6 +120,11 @@ def test_project_aggregates_and_progress(sqlite_engine: Engine) -> None:
             [
                 GddSection(project=project, title="Visão", status="finished"),
                 GddSection(project=project, title="Gameplay", status="draft"),
+                Character(
+                    project=project,
+                    name="Protagonista",
+                    normalized_name="protagonista",
+                ),
             ]
         )
 
@@ -127,6 +132,7 @@ def test_project_aggregates_and_progress(sqlite_engine: Engine) -> None:
     assert project.section_count == 2
     assert project.finished_section_count == 1
     assert project.progress == 50
+    assert project.character_count == 1
 
 
 @pytest.mark.parametrize(

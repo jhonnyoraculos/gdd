@@ -8,7 +8,19 @@ from functools import partial
 
 import streamlit as st
 
-from pages import archived, editor, favorites, home, ideas, project, projects, recent, settings
+from pages import (
+    archived,
+    character,
+    characters,
+    editor,
+    favorites,
+    home,
+    ideas,
+    project,
+    projects,
+    recent,
+    settings,
+)
 from services.database import DatabaseHealth
 from utils.navigation_state import go_to_page
 
@@ -42,6 +54,22 @@ PAGE_SPECS: tuple[PageSpec, ...] = (
     ),
     PageSpec("gdd_editor", "Editor", "Editor GDD", ":material/article:", "gdd", "detail"),
     PageSpec(
+        "characters",
+        "Personagens",
+        "Personagens",
+        ":material/groups:",
+        "characters",
+        "detail",
+    ),
+    PageSpec(
+        "character_detail",
+        "Personagem",
+        "Ficha do personagem",
+        ":material/person:",
+        "character",
+        "detail",
+    ),
+    PageSpec(
         "settings",
         "Configurações",
         "Configurações",
@@ -66,6 +94,8 @@ def _renderers(
         "archived": archived.render,
         "project_detail": project.render,
         "gdd_editor": editor.render,
+        "characters": characters.render,
+        "character_detail": character.render,
         "settings": partial(settings.render, health, on_retry),
     }
 
@@ -114,4 +144,4 @@ def render_sidebar(current_key: str) -> None:
         st.write("")
         with st.container(key="secondary-navigation"):
             _render_page_links(current_key, "system")
-        st.caption("Editor GDD · Etapa 3")
+        st.caption("GDD Studio · Personagens")

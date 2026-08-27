@@ -21,6 +21,8 @@ def test_initial_migration_compiles_with_expected_constraint_names() -> None:
 
     assert "CREATE TABLE users" in sql
     assert "CREATE TABLE gdd_sections" in sql
+    assert "CREATE TABLE characters" in sql
+    assert "CONSTRAINT uq_characters_project_normalized_name UNIQUE" in sql
     assert "CONSTRAINT ck_gdd_sections_parent_not_self CHECK" in sql
     assert "CONSTRAINT ck_ideas_converted_timestamp_consistent CHECK" in sql
     assert "ck_gdd_sections_ck_gdd_sections" not in sql

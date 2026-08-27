@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy import Engine, inspect
 from sqlalchemy.exc import IntegrityError
 
-from models import Base, GddSection, Project, User
+from models import Base, Character, GddSection, Project, User
 from services.database import session_scope
 
 EXPECTED_TABLES = {
@@ -23,6 +23,7 @@ EXPECTED_TABLES = {
     "reference_tags",
     "project_versions",
     "roadmap_items",
+    "characters",
 }
 
 
@@ -121,3 +122,26 @@ def test_loaded_section_children_are_deleted_by_database_cascade(
 
     with session_scope(sqlite_engine) as session:
         assert session.query(GddSection).count() == 0
+
+
+def test_characters_are_deleted_with_their_project(sqlite_engine: Engine) -> None:
+    with session_scope(sqlite_engine) as session:
+        user = User(
+            name="Criador",
+            email="creator@example.com",
+            email_normalized="creator@example.com",
+        )
+        project = Project(user=user, name="Projeto")
+        character = Character(
+            project=project,
+            name="Protagonista",
+            normalized_name="protagonista",
+        )
+        session.add_all([user, project, character])
+
+    with session_scope(sqlite_engine) as session:
+        project = session.query(Project).one()
+        session.delete(project)
+
+    with session_scope(sqlite_engine) as session:
+        assert session.query(Character).count() == 0

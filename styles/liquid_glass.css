@@ -20,7 +20,10 @@
   }
 
   [class*="st-key-project-card-"],
-  .gdd-project-hero {
+  [class*="st-key-character-card-"],
+  .gdd-project-hero,
+  .gdd-character-hero,
+  .gdd-profile-section {
     background: var(--gdd-glass-bg);
     -webkit-backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
     backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
@@ -43,6 +46,16 @@
   }
 
   [class*="st-key-project-card-"]:hover {
+    border-color: color-mix(in srgb, var(--gdd-accent) 28%, var(--gdd-glass-border));
+    box-shadow: var(--gdd-shadow-lg), inset 0 1px 0 var(--gdd-glass-highlight);
+    transform: translateY(-2px);
+  }
+
+  [class*="st-key-character-card-"] {
+    transition: border-color var(--gdd-transition), box-shadow var(--gdd-transition), transform var(--gdd-transition);
+  }
+
+  [class*="st-key-character-card-"]:hover {
     border-color: color-mix(in srgb, var(--gdd-accent) 28%, var(--gdd-glass-border));
     box-shadow: var(--gdd-shadow-lg), inset 0 1px 0 var(--gdd-glass-highlight);
     transform: translateY(-2px);

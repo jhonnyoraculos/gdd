@@ -13,6 +13,7 @@ from models.base import Base, TimestampMixin, UuidPrimaryKeyMixin
 from utils.constants import DEFAULT_ACCENT_COLOR
 
 if TYPE_CHECKING:
+    from models.character import Character
     from models.idea import Idea
     from models.note import Note
     from models.reference import ProjectReference
@@ -61,6 +62,12 @@ class Project(UuidPrimaryKeyMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="GddSection.position",
+    )
+    characters: Mapped[list[Character]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Character.name",
     )
     notes: Mapped[list[Note]] = relationship(
         back_populates="project",

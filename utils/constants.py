@@ -40,5 +40,17 @@ ROADMAP_STATUSES: tuple[StatusOption, ...] = (
     StatusOption("done", "Concluído"),
 )
 
+CHARACTER_ROLES: tuple[str, ...] = (
+    "Protagonista",
+    "Antagonista",
+    "Coadjuvante",
+    "Aliado",
+    "Vilão",
+    "NPC",
+    "Criatura",
+    "Mentor",
+    "Personagem secundário",
+)
+
 DEFAULT_ACCENT_COLOR = "#7C5CFC"
 INITIAL_SCHEMA_REVISION = "0001_initial_schema"

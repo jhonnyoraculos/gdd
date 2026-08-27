@@ -6,6 +6,18 @@
   .gdd-project-hero {
     grid-template-columns: minmax(150px, 0.45fr) minmax(0, 1fr);
   }
+
+  .gdd-character-hero {
+    grid-template-columns: minmax(150px, 0.4fr) minmax(0, 1fr);
+  }
+
+  .gdd-character-arc {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gdd-character-arc__step:nth-child(2)::after {
+    content: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -45,6 +57,37 @@
 
   .gdd-project-hero__content {
     padding: 0.7rem 0.65rem 1rem;
+  }
+
+  .gdd-character-hero {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.65rem;
+  }
+
+  .gdd-character-hero__portrait {
+    aspect-ratio: 16 / 10;
+    max-height: 340px;
+  }
+
+  .gdd-character-hero__content {
+    padding: 0.7rem 0.65rem 1rem;
+  }
+
+  .gdd-profile-grid,
+  .gdd-character-arc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gdd-character-arc__step::after {
+    bottom: -1.38rem;
+    content: "↓" !important;
+    right: 50% !important;
+    top: auto !important;
+  }
+
+  .gdd-character-arc__step:last-child::after {
+    content: none !important;
   }
 
   .st-key-gdd-outline,

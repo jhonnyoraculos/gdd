@@ -12,7 +12,7 @@ from uuid import UUID
 from sqlalchemy import Engine, Select, func, or_, select
 from sqlalchemy.orm import Session
 
-from models import GddSection, Note, Project, ProjectReference
+from models import Character, GddSection, Note, Project, ProjectReference
 from services.database import session_scope
 from services.gdd_templates import add_complete_template
 from services.user_service import OwnerIdentity, get_or_create_owner
@@ -91,6 +91,7 @@ class ProjectDetails(ProjectSummary):
     created_at: datetime
     note_count: int
     reference_count: int
+    character_count: int
     template_key: str | None
 
 
@@ -382,15 +383,32 @@ def get_project(
             .correlate(Project)
             .scalar_subquery()
         )
+        character_count = (
+            select(func.count(Character.id))
+            .where(Character.project_id == Project.id)
+            .correlate(Project)
+            .scalar_subquery()
+        )
         row = session.execute(
-            select(Project, section_count, finished_count, note_count, reference_count).where(
-                Project.id == project_id,
-                Project.user_id == user.id,
-            )
+            select(
+                Project,
+                section_count,
+                finished_count,
+                note_count,
+                reference_count,
+                character_count,
+            ).where(Project.id == project_id, Project.user_id == user.id)
         ).one_or_none()
         if row is None:
             raise ProjectNotFoundError("Projeto não encontrado.")
-        project, section_total, finished_total, notes_total, references_total = row
+        (
+            project,
+            section_total,
+            finished_total,
+            notes_total,
+            references_total,
+            characters_total,
+        ) = row
         return ProjectDetails(
             id=project.id,
             name=project.name,
@@ -413,5 +431,6 @@ def get_project(
             finished_section_count=finished_total,
             note_count=notes_total,
             reference_count=references_total,
+            character_count=characters_total,
             template_key=project.template_key,
         )

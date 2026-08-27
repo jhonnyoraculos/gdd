@@ -143,15 +143,25 @@ def _toolbar(owner: OwnerIdentity, project: ProjectDetails) -> None:
 def _actions(project_id: UUID) -> None:
     st.html(
         '<div class="gdd-section-heading"><h2>Workspace do projeto</h2>'
-        "<p>Os módulos seguintes serão conectados nas próximas etapas.</p></div>"
+        "<p>Abra o documento do jogo ou desenvolva seu elenco narrativo.</p></div>"
     )
-    if st.button(
-        "Abrir GDD",
-        icon=":material/article:",
-        type="primary",
-        use_container_width=True,
-    ):
-        go_to_page("gdd_editor", project=str(project_id))
+    gdd_col, characters_col = st.columns(2)
+    with gdd_col:
+        if st.button(
+            "Abrir GDD",
+            icon=":material/article:",
+            type="primary",
+            use_container_width=True,
+        ):
+            go_to_page("gdd_editor", project=str(project_id))
+    with characters_col:
+        if st.button(
+            "Personagens",
+            icon=":material/groups:",
+            type="primary",
+            use_container_width=True,
+        ):
+            go_to_page("characters", project=str(project_id))
     labels = (
         ("Nova nota", ":material/note_add:", "Disponível na Etapa 5"),
         ("Referências", ":material/collections_bookmark:", "Disponível na Etapa 6"),
@@ -208,6 +218,12 @@ def render() -> None:
                 f"{project.finished_section_count} finalizadas",
             ),
             InfoCard("✎", "Notas", str(project.note_count), "Notas vinculadas a este projeto."),
+            InfoCard(
+                "♙",
+                "Personagens",
+                str(project.character_count),
+                "Fichas do elenco deste jogo.",
+            ),
             InfoCard(
                 "◇", "Referências", str(project.reference_count), "Itens da biblioteca do projeto."
             ),
