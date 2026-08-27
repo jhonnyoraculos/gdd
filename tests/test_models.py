@@ -24,6 +24,8 @@ EXPECTED_TABLES = {
     "project_versions",
     "roadmap_items",
     "characters",
+    "chapters",
+    "scenes",
 }
 
 

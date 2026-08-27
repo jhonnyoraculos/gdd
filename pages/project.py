@@ -145,7 +145,7 @@ def _actions(project_id: UUID) -> None:
         '<div class="gdd-section-heading"><h2>Workspace do projeto</h2>'
         "<p>Abra o documento do jogo ou desenvolva seu elenco narrativo.</p></div>"
     )
-    gdd_col, characters_col = st.columns(2)
+    gdd_col, characters_col, narrative_col = st.columns(3)
     with gdd_col:
         if st.button(
             "Abrir GDD",
@@ -162,6 +162,14 @@ def _actions(project_id: UUID) -> None:
             use_container_width=True,
         ):
             go_to_page("characters", project=str(project_id))
+    with narrative_col:
+        if st.button(
+            "Narrativa",
+            icon=":material/account_tree:",
+            type="primary",
+            use_container_width=True,
+        ):
+            go_to_page("narrative", project=str(project_id))
     labels = (
         ("Nova nota", ":material/note_add:", "Disponível na Etapa 5"),
         ("Referências", ":material/collections_bookmark:", "Disponível na Etapa 6"),
@@ -223,6 +231,12 @@ def render() -> None:
                 "Personagens",
                 str(project.character_count),
                 "Fichas do elenco deste jogo.",
+            ),
+            InfoCard(
+                "§",
+                "Narrativa",
+                f"{project.chapter_count} / {project.scene_count}",
+                "Capítulos / cenas estruturadas.",
             ),
             InfoCard(
                 "◇", "Referências", str(project.reference_count), "Itens da biblioteca do projeto."

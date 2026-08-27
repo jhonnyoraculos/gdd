@@ -13,11 +13,13 @@ from models.base import Base, TimestampMixin, UuidPrimaryKeyMixin
 from utils.constants import DEFAULT_ACCENT_COLOR
 
 if TYPE_CHECKING:
+    from models.chapter import Chapter
     from models.character import Character
     from models.idea import Idea
     from models.note import Note
     from models.reference import ProjectReference
     from models.roadmap import RoadmapItem
+    from models.scene import Scene
     from models.section import GddSection
     from models.tag import Tag
     from models.user import User
@@ -68,6 +70,19 @@ class Project(UuidPrimaryKeyMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="Character.name",
+    )
+    chapters: Mapped[list[Chapter]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Chapter.position",
+    )
+    scenes: Mapped[list[Scene]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        foreign_keys="Scene.project_id",
+        overlaps="chapter,scenes",
     )
     notes: Mapped[list[Note]] = relationship(
         back_populates="project",

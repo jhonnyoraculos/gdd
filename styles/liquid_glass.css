@@ -28,6 +28,12 @@
     -webkit-backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
     backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
   }
+
+  [class*="st-key-narrative-chapter-"] {
+    background: var(--gdd-glass-bg);
+    -webkit-backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
+    backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
+  }
 }
 
 @media (hover: hover) {

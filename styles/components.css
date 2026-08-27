@@ -688,3 +688,54 @@
 .gdd-profile-section--muted > small {
   color: var(--gdd-text-muted);
 }
+
+[class*="st-key-narrative-chapter-"] {
+  background: var(--gdd-glass-strong);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-lg);
+  box-shadow: var(--gdd-shadow-sm), inset 0 1px 0 var(--gdd-glass-highlight);
+  margin: 1rem 0 1.35rem;
+  overflow: hidden;
+  padding: clamp(1rem, 2vw, 1.4rem);
+}
+
+[class*="st-key-narrative-scene-"] {
+  background: color-mix(in srgb, var(--gdd-surface) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gdd-glass-border) 84%, transparent);
+  border-radius: var(--gdd-radius-md);
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+}
+
+.gdd-chapter-heading > span,
+.gdd-scene-heading > span {
+  color: var(--gdd-accent);
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gdd-chapter-heading > h2 {
+  color: var(--gdd-text);
+  font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+  letter-spacing: -0.04em;
+  margin: 0.28rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.gdd-chapter-heading > p {
+  color: var(--gdd-text-secondary);
+  line-height: 1.5;
+  margin: 0.45rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.gdd-scene-heading > h3 {
+  color: var(--gdd-text);
+  font-size: 1.03rem;
+  letter-spacing: -0.025em;
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}

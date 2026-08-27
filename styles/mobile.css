@@ -90,6 +90,14 @@
     content: none !important;
   }
 
+  [class*="st-key-narrative-chapter-"] {
+    padding: 0.85rem;
+  }
+
+  [class*="st-key-narrative-scene-"] {
+    padding: 0.75rem;
+  }
+
   .st-key-gdd-outline,
   .st-key-gdd-document {
     padding: 0.9rem;

@@ -16,6 +16,7 @@ from pages import (
     favorites,
     home,
     ideas,
+    narrative,
     project,
     projects,
     recent,
@@ -70,6 +71,14 @@ PAGE_SPECS: tuple[PageSpec, ...] = (
         "detail",
     ),
     PageSpec(
+        "narrative",
+        "Narrativa",
+        "Estrutura narrativa",
+        ":material/account_tree:",
+        "narrative",
+        "detail",
+    ),
+    PageSpec(
         "settings",
         "Configurações",
         "Configurações",
@@ -96,6 +105,7 @@ def _renderers(
         "gdd_editor": editor.render,
         "characters": characters.render,
         "character_detail": character.render,
+        "narrative": narrative.render,
         "settings": partial(settings.render, health, on_retry),
     }
 
@@ -144,4 +154,4 @@ def render_sidebar(current_key: str) -> None:
         st.write("")
         with st.container(key="secondary-navigation"):
             _render_page_links(current_key, "system")
-        st.caption("GDD Studio · Personagens")
+        st.caption("GDD Studio · Base narrativa")

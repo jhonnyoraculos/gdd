@@ -12,7 +12,7 @@ from uuid import UUID
 from sqlalchemy import Engine, Select, func, or_, select
 from sqlalchemy.orm import Session
 
-from models import Character, GddSection, Note, Project, ProjectReference
+from models import Chapter, Character, GddSection, Note, Project, ProjectReference, Scene
 from services.database import session_scope
 from services.gdd_templates import add_complete_template
 from services.user_service import OwnerIdentity, get_or_create_owner
@@ -92,6 +92,8 @@ class ProjectDetails(ProjectSummary):
     note_count: int
     reference_count: int
     character_count: int
+    chapter_count: int
+    scene_count: int
     template_key: str | None
 
 
@@ -389,6 +391,18 @@ def get_project(
             .correlate(Project)
             .scalar_subquery()
         )
+        chapter_count = (
+            select(func.count(Chapter.id))
+            .where(Chapter.project_id == Project.id)
+            .correlate(Project)
+            .scalar_subquery()
+        )
+        scene_count = (
+            select(func.count(Scene.id))
+            .where(Scene.project_id == Project.id)
+            .correlate(Project)
+            .scalar_subquery()
+        )
         row = session.execute(
             select(
                 Project,
@@ -397,6 +411,8 @@ def get_project(
                 note_count,
                 reference_count,
                 character_count,
+                chapter_count,
+                scene_count,
             ).where(Project.id == project_id, Project.user_id == user.id)
         ).one_or_none()
         if row is None:
@@ -408,6 +424,8 @@ def get_project(
             notes_total,
             references_total,
             characters_total,
+            chapters_total,
+            scenes_total,
         ) = row
         return ProjectDetails(
             id=project.id,
@@ -432,5 +450,7 @@ def get_project(
             note_count=notes_total,
             reference_count=references_total,
             character_count=characters_total,
+            chapter_count=chapters_total,
+            scene_count=scenes_total,
             template_key=project.template_key,
         )
