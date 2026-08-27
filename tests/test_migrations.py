@@ -24,7 +24,10 @@ def test_initial_migration_compiles_with_expected_constraint_names() -> None:
     assert "CREATE TABLE characters" in sql
     assert "CREATE TABLE chapters" in sql
     assert "CREATE TABLE scenes" in sql
+    assert "CREATE TABLE scene_characters" in sql
     assert "CONSTRAINT fk_scenes_chapter_project FOREIGN KEY" in sql
+    assert "CONSTRAINT fk_scene_characters_scene_project FOREIGN KEY" in sql
+    assert "CONSTRAINT fk_scene_characters_character_project FOREIGN KEY" in sql
     assert "CONSTRAINT uq_characters_project_normalized_name UNIQUE" in sql
     assert "CONSTRAINT ck_gdd_sections_parent_not_self CHECK" in sql
     assert "CONSTRAINT ck_ideas_converted_timestamp_consistent CHECK" in sql

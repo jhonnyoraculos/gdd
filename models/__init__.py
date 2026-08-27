@@ -12,6 +12,7 @@ from models.project import Project
 from models.reference import ProjectReference
 from models.roadmap import RoadmapItem
 from models.scene import Scene
+from models.scene_character import SceneCharacter
 from models.section import GddSection
 from models.tag import Tag, idea_tags, note_tags, project_tags, reference_tags, section_tags
 from models.user import User
@@ -29,6 +30,7 @@ __all__ = [
     "ProjectVersion",
     "RoadmapItem",
     "Scene",
+    "SceneCharacter",
     "Tag",
     "User",
     "idea_tags",

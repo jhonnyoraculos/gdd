@@ -739,3 +739,125 @@
   margin: 0.2rem 0 0;
   overflow-wrap: anywhere;
 }
+
+.gdd-appearance-metrics {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.gdd-appearance-metrics > div {
+  background: color-mix(in srgb, var(--gdd-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gdd-accent) 16%, transparent);
+  border-radius: var(--gdd-radius-sm);
+  min-width: 0;
+  padding: 0.9rem;
+}
+
+.gdd-appearance-metrics span,
+.gdd-timeline-node small {
+  color: var(--gdd-text-muted);
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.gdd-appearance-metrics strong {
+  color: var(--gdd-text);
+  display: block;
+  font-size: 1.05rem;
+  margin-top: 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.gdd-appearance-chapters {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gdd-appearance-chapter {
+  background: color-mix(in srgb, var(--gdd-surface) 62%, transparent);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-sm);
+  min-width: 0;
+  padding: 1rem;
+}
+
+.gdd-appearance-chapter > h3 {
+  color: var(--gdd-text);
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.gdd-appearance-scene {
+  border-top: 1px solid color-mix(in srgb, var(--gdd-glass-border) 70%, transparent);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0;
+}
+
+.gdd-appearance-scene strong {
+  color: var(--gdd-text);
+}
+
+.gdd-appearance-scene span,
+.gdd-appearance-scene p {
+  color: var(--gdd-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gdd-character-timeline {
+  display: grid;
+  gap: 0;
+}
+
+.gdd-timeline-node {
+  align-items: center;
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  min-height: 4.2rem;
+  position: relative;
+}
+
+.gdd-timeline-node::before {
+  background: color-mix(in srgb, var(--gdd-accent) 35%, transparent);
+  content: "";
+  height: 100%;
+  left: 1.08rem;
+  position: absolute;
+  top: 50%;
+  width: 1px;
+}
+
+.gdd-timeline-node:last-child::before {
+  content: none;
+}
+
+.gdd-timeline-node > span {
+  align-items: center;
+  background: var(--gdd-accent);
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  height: 2.25rem;
+  justify-content: center;
+  position: relative;
+  width: 2.25rem;
+  z-index: 1;
+}
+
+.gdd-timeline-node strong {
+  color: var(--gdd-text);
+  display: block;
+  margin-top: 0.22rem;
+  overflow-wrap: anywhere;
+}

@@ -98,6 +98,11 @@
     padding: 0.75rem;
   }
 
+  .gdd-appearance-metrics,
+  .gdd-appearance-chapters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .st-key-gdd-outline,
   .st-key-gdd-document {
     padding: 0.9rem;

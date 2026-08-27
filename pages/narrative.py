@@ -9,6 +9,10 @@ from uuid import UUID, uuid4
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
+from components.appearance_forms import (
+    show_edit_appearance_dialog,
+    show_manage_scene_cast_dialog,
+)
 from components.cards import render_empty_state
 from components.feedback import set_flash
 from components.narrative_forms import (
@@ -18,6 +22,11 @@ from components.narrative_forms import (
     show_edit_scene_dialog,
 )
 from config.settings import get_settings
+from services.appearance_service import (
+    AppearanceServiceError,
+    ProjectAppearanceIndex,
+    get_project_appearance_index,
+)
 from services.narrative_service import (
     ChapterDetails,
     NarrativeDirection,
@@ -95,6 +104,7 @@ def _scene_card(
     chapters: tuple[ChapterDetails, ...],
     index: int,
     total: int,
+    appearance_index: ProjectAppearanceIndex,
 ) -> None:
     with st.container(key=f"narrative-scene-{scene.id}", border=False):
         info, actions = st.columns([1, 0.52], vertical_alignment="center")
@@ -139,6 +149,42 @@ def _scene_card(
         if scene.content:
             with st.expander("Ver conteúdo da cena"):
                 st.markdown(scene.content)
+        cast = appearance_index.cast_for(scene.id)
+        with st.expander(f"Personagens da cena ({len(cast)})", expanded=bool(cast)):
+            if not cast:
+                st.caption("Nenhum personagem vinculado.")
+            for member in cast:
+                name_col, details_col = st.columns([1, 0.18], vertical_alignment="center")
+                with name_col:
+                    label = member.role_in_scene or member.role or "Papel a definir"
+                    if st.button(
+                        f"{member.name} · {label}",
+                        key=f"open-cast-character-{scene.id}-{member.character_id}",
+                        icon=":material/person:",
+                        use_container_width=True,
+                    ):
+                        go_to_page(
+                            "character_detail",
+                            project=str(scene.project_id),
+                            id=str(member.character_id),
+                        )
+                with details_col:
+                    if st.button(
+                        "",
+                        key=f"edit-appearance-{scene.id}-{member.character_id}",
+                        icon=":material/edit:",
+                        help="Editar papel e notas desta participação",
+                        use_container_width=True,
+                    ):
+                        show_edit_appearance_dialog(owner, scene, member)
+            if st.button(
+                "Gerenciar personagens",
+                key=f"manage-scene-cast-{scene.id}",
+                icon=":material/group_add:",
+                type="primary",
+                use_container_width=True,
+            ):
+                show_manage_scene_cast_dialog(owner, scene, appearance_index)
 
 
 def _chapter_card(
@@ -146,6 +192,7 @@ def _chapter_card(
     chapter: ChapterDetails,
     chapters: tuple[ChapterDetails, ...],
     index: int,
+    appearance_index: ProjectAppearanceIndex,
 ) -> None:
     with st.container(key=f"narrative-chapter-{chapter.id}", border=False):
         info, actions = st.columns([1, 0.58], vertical_alignment="center")
@@ -202,7 +249,14 @@ def _chapter_card(
         if not chapter.scenes:
             st.caption("Nenhuma cena neste capítulo.")
         for scene_index, scene in enumerate(chapter.scenes):
-            _scene_card(owner, scene, chapters, scene_index, len(chapter.scenes))
+            _scene_card(
+                owner,
+                scene,
+                chapters,
+                scene_index,
+                len(chapter.scenes),
+                appearance_index,
+            )
 
 
 def render() -> None:
@@ -217,7 +271,8 @@ def render() -> None:
     try:
         project = get_project(owner, project_id)
         chapters = list_narrative(owner, project_id)
-    except (ProjectNotFoundError, NarrativeNotFoundError):
+        appearance_index = get_project_appearance_index(owner, project_id)
+    except (ProjectNotFoundError, NarrativeNotFoundError, AppearanceServiceError):
         render_empty_state("?", "Projeto não encontrado", "Este projeto não está disponível.")
         return
     except SQLAlchemyError:
@@ -259,4 +314,4 @@ def render() -> None:
         )
         return
     for index, chapter in enumerate(chapters):
-        _chapter_card(owner, chapter, chapters, index)
+        _chapter_card(owner, chapter, chapters, index, appearance_index)

@@ -1,6 +1,6 @@
 # GDD Studio
 
-Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. A aplicação inclui fundação, projetos, editor hierárquico do GDD e as Etapas 1 e 2 do sistema Personagens + Árvore Narrativa.
+Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. A aplicação inclui fundação, projetos, editor hierárquico do GDD e as Etapas 1, 2 e 3 do sistema Personagens + Árvore Narrativa.
 
 ## O que já está pronto
 
@@ -28,6 +28,9 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Estrutura narrativa com capítulos, cenas, resumos e conteúdo em Markdown.
 - Ordenação de capítulos e cenas com linha temporal global recalculada automaticamente.
 - Movimentação de cenas entre capítulos e exclusão em cascata protegida por confirmação.
+- Seleção pesquisável de personagens dentro de cada cena, persistida como vínculo many-to-many.
+- Papel e notas opcionais por participação, sem duplicação de personagem ou perda de metadados.
+- Aparições, primeira/última cena, capítulos e linha narrativa calculados automaticamente na ficha.
 
 O editor do GDD e os módulos seguintes permanecem separados para as próximas etapas, sem dados mockados.
 
@@ -153,6 +156,7 @@ services/project_service.py # CRUD e consultas de projetos filtradas pelo dono
 services/gdd_service.py     # hierarquia, editor, autosave e ordenação
 services/character_service.py # CRUD e consultas de personagens
 services/narrative_service.py # capítulos, cenas e ordem narrativa
+services/appearance_service.py # elenco das cenas e aparições calculadas
 pages/                    # rotas pequenas e independentes
 styles/                   # design system CSS separado
 migrations/               # evolução versionada do PostgreSQL
@@ -174,6 +178,7 @@ tests/                    # testes rápidos isolados
 - `roadmap_items`
 - `characters` (fichas completas vinculadas ao projeto)
 - `chapters` e `scenes` (estrutura e ordem narrativa)
+- `scene_characters` (vínculos de aparição personagem–cena)
 
 Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snapshots usam JSONB no PostgreSQL. Seções, notas e itens de roadmap possuem revisão otimista para preparar o autosave sem sobrescritas silenciosas.
 
@@ -183,11 +188,11 @@ Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snap
 - Até lá, o banco não impede sozinho uma associação de tag entre proprietários diferentes; os serviços multiusuário deverão validar ownership em toda escrita, com constraints/RLS em uma migration futura.
 - Capas usam uma URL pública; upload de arquivos exigirá armazenamento de objetos em uma etapa futura.
 - Retratos de personagens usam URL pública; upload direto ainda não possui armazenamento de objetos.
-- Aparições, relações entre personagens e mapa narrativo pertencem às próximas etapas do novo sistema.
+- Relações entre personagens e mapa narrativo pertencem às próximas etapas do novo sistema.
 - O autosave ocorre quando o Streamlit sincroniza o campo — ao pausar/sair dele ou usar Ctrl+Enter — evitando uma escrita por tecla.
 - Não há dados demonstrativos nem persistência local alternativa.
 - A conexão real e a migration no Neon precisam de credenciais fornecidas por você.
 
 ## Próxima etapa do sistema narrativo
 
-A **Etapa 3 — Vinculação** conectará personagens às cenas e calculará aparições automaticamente.
+A **Etapa 4 — Relacionamentos** conectará personagens entre si com relações direcionais.

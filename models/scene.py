@@ -5,7 +5,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text
+from sqlalchemy import (
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base, TimestampMixin, UuidPrimaryKeyMixin
@@ -18,6 +26,7 @@ if TYPE_CHECKING:
 class Scene(UuidPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "scenes"
     __table_args__ = (
+        UniqueConstraint("id", "project_id", name="uq_scenes_id_project_id"),
         ForeignKeyConstraint(
             ["chapter_id", "project_id"],
             ["chapters.id", "chapters.project_id"],

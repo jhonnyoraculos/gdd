@@ -26,6 +26,7 @@ EXPECTED_TABLES = {
     "characters",
     "chapters",
     "scenes",
+    "scene_characters",
 }
 
 

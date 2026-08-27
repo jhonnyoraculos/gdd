@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 class Character(UuidPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "characters"
     __table_args__ = (
+        UniqueConstraint("id", "project_id", name="uq_characters_id_project_id"),
         UniqueConstraint(
             "project_id",
             "normalized_name",

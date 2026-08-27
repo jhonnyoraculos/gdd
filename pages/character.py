@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from html import escape
 from uuid import UUID, uuid4
 
@@ -13,6 +14,12 @@ from components.cards import render_empty_state
 from components.character_form import show_edit_character_dialog
 from components.feedback import set_flash
 from config.settings import get_settings
+from services.appearance_service import (
+    AppearanceServiceError,
+    CharacterAppearance,
+    CharacterTimeline,
+    get_character_timeline,
+)
 from services.character_service import (
     CharacterDetails,
     CharacterNotFoundError,
@@ -200,11 +207,96 @@ def _profile(character: CharacterDetails) -> None:
     )
 
 
+def _appearances(timeline: CharacterTimeline, project_id: UUID) -> None:
+    if not timeline.items:
+        st.html(
+            '<section class="gdd-profile-section gdd-profile-section--muted">'
+            "<h2>Aparições</h2>"
+            "<p>Este personagem ainda não foi vinculado a nenhuma cena.</p>"
+            "</section>"
+        )
+        if st.button(
+            "Abrir estrutura narrativa",
+            icon=":material/account_tree:",
+            use_container_width=True,
+        ):
+            go_to_page("narrative", project=str(project_id))
+        return
+
+    first = timeline.first
+    last = timeline.last
+    assert first is not None and last is not None
+    st.html(
+        '<section class="gdd-profile-section">'
+        "<h2>Aparições</h2>"
+        '<div class="gdd-appearance-metrics">'
+        "<div><span>Total</span>"
+        f"<strong>{timeline.total}</strong></div>"
+        "<div><span>Primeira aparição</span>"
+        f"<strong>{escape(first.scene_title)}</strong></div>"
+        "<div><span>Última aparição</span>"
+        f"<strong>{escape(last.scene_title)}</strong></div>"
+        "<div><span>Capítulos</span>"
+        f"<strong>{timeline.chapter_count}</strong></div>"
+        "</div></section>"
+    )
+
+    grouped: defaultdict[UUID, list[CharacterAppearance]] = defaultdict(list)
+    chapter_names: dict[UUID, str] = {}
+    for item in timeline.items:
+        grouped[item.chapter_id].append(item)
+        chapter_names[item.chapter_id] = item.chapter_title
+    chapters = "".join(
+        '<div class="gdd-appearance-chapter">'
+        f"<h3>{escape(chapter_names[chapter_id])}</h3>"
+        + "".join(
+            '<div class="gdd-appearance-scene">'
+            f"<strong>{escape(item.scene_title)}</strong>"
+            + (f"<span>{escape(item.role_in_scene)}</span>" if item.role_in_scene else "")
+            + (f"<p>{_text(item.notes)}</p>" if item.notes else "")
+            + "</div>"
+            for item in items
+        )
+        + "</div>"
+        for chapter_id, items in grouped.items()
+    )
+    timeline_nodes = "".join(
+        '<div class="gdd-timeline-node">'
+        f"<span>{index}</span><div><small>{escape(item.chapter_title)}</small>"
+        f"<strong>{escape(item.scene_title)}</strong></div></div>"
+        for index, item in enumerate(timeline.items, start=1)
+    )
+    st.html(
+        '<section class="gdd-profile-section">'
+        "<h2>Cenas por capítulo</h2>"
+        f'<div class="gdd-appearance-chapters">{chapters}</div>'
+        "</section>"
+        '<section class="gdd-profile-section">'
+        "<h2>Linha narrativa</h2>"
+        f'<div class="gdd-character-timeline">{timeline_nodes}</div>'
+        "</section>"
+    )
+    if st.button(
+        "Abrir estrutura narrativa",
+        icon=":material/account_tree:",
+        use_container_width=True,
+    ):
+        go_to_page("narrative", project=str(project_id))
+
+
 @st.dialog("Excluir personagem", icon=":material/delete_forever:")
-def _confirm_delete(owner: OwnerIdentity, character: CharacterDetails) -> None:
+def _confirm_delete(
+    owner: OwnerIdentity,
+    character: CharacterDetails,
+    appearance_count: int,
+) -> None:
+    appearance_label = (
+        f"{appearance_count} aparição" if appearance_count == 1 else f"{appearance_count} aparições"
+    )
     st.warning(
-        f"Excluir {character.name}? Esta ação é permanente. As futuras conexões narrativas "
-        "também serão removidas por integridade do banco."
+        f"Excluir {character.name}? Esta ação é permanente. "
+        f"{appearance_label} "
+        "também será removida por integridade do banco."
     )
     confirmation = st.text_input(
         f'Digite "{character.name}" para confirmar',
@@ -238,9 +330,10 @@ def render() -> None:
 
     owner = owner_from_settings(get_settings())
     try:
-        project = get_project(owner, project_id)
+        get_project(owner, project_id)
         character = get_character(owner, project_id, character_id)
-    except (ProjectNotFoundError, CharacterNotFoundError):
+        timeline = get_character_timeline(owner, project_id, character_id)
+    except (ProjectNotFoundError, CharacterNotFoundError, AppearanceServiceError):
         render_empty_state("?", "Personagem não encontrado", "A ficha pode ter sido removida.")
         if st.button("Voltar aos personagens", use_container_width=True):
             go_to_page("characters", project=str(project_id))
@@ -259,15 +352,8 @@ def render() -> None:
         if st.button("Editar", icon=":material/edit:"):
             show_edit_character_dialog(owner, character)
         if st.button("Excluir", icon=":material/delete:"):
-            _confirm_delete(owner, character)
+            _confirm_delete(owner, character, timeline.total)
 
     _hero(character)
+    _appearances(timeline, project_id)
     _profile(character)
-    st.html(
-        '<section class="gdd-profile-section gdd-profile-section--muted">'
-        "<h2>Aparições</h2>"
-        "<p>As aparições e a linha narrativa serão calculadas automaticamente quando "
-        "cenas e vínculos forem adicionados nas próximas etapas.</p>"
-        f"<small>Projeto: {escape(project.name)}</small>"
-        "</section>"
-    )
