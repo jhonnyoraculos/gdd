@@ -19,6 +19,7 @@ from services.database import (
 )
 from styles.loader import load_styles
 from utils.logging_config import configure_logging
+from utils.navigation_state import set_root_page
 
 st.set_page_config(
     page_title="GDD Studio",
@@ -67,6 +68,7 @@ def main() -> None:
         [st.Page(lambda: None, title="GDD Studio", url_path="", default=True)],
         position="hidden",
     )
+    set_root_page(root_page)
     root_page.run()
     current_spec = current_page_spec()
 
