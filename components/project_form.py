@@ -96,6 +96,16 @@ def _project_fields(project: ProjectDetails | None, form_key: str) -> ProjectInp
             placeholder="https://...",
             help="Nesta etapa, a capa usa uma imagem hospedada em uma URL pública.",
         )
+        if project is None:
+            template_key = st.selectbox(
+                "Estrutura inicial do GDD",
+                options=["complete", None],
+                format_func=lambda value: (
+                    "GDD Completo — 16 categorias" if value == "complete" else "Começar vazio"
+                ),
+            )
+        else:
+            template_key = project.template_key
         submitted = st.form_submit_button(
             "Salvar projeto" if project else "Criar projeto",
             type="primary",
@@ -116,6 +126,7 @@ def _project_fields(project: ProjectDetails | None, form_key: str) -> ProjectInp
         start_date=start_date,
         cover_url=cover_url,
         accent_color=accent_color,
+        template_key=template_key,
     )
 
 

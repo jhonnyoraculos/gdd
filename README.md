@@ -1,6 +1,6 @@
 # GDD Studio
 
-Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. Esta entrega cobre as **Etapas 1 e 2**: fundação técnica e gerenciamento completo de projetos.
+Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. Esta entrega cobre as **Etapas 1, 2 e 3**: fundação, projetos e editor hierárquico do GDD.
 
 ## O que já está pronto
 
@@ -17,6 +17,11 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Página individual do projeto com indicadores, metadados e ações seguras.
 - Exclusão permanente protegida por confirmação com o nome do projeto.
 - Todas as consultas e escritas filtradas pelo proprietário configurado do workspace.
+- Template GDD Completo com 16 categorias e 129 seções organizadas.
+- Categorias, grupos, páginas e subseções personalizadas sem limite fixo de profundidade.
+- Editor Markdown com modos Editar/Visualizar, status e progresso automático.
+- Autosave ao pausar/sair do campo, botão Salvar agora e controle otimista de revisão.
+- Ordenação segura por botões Subir/Descer e exclusão em cascata confirmada.
 
 O editor do GDD e os módulos seguintes permanecem separados para as próximas etapas, sem dados mockados.
 
@@ -139,6 +144,7 @@ config/                   # leitura e validação do ambiente
 models/                   # modelos SQLAlchemy
 services/database.py      # engine, sessões, health check e migration
 services/project_service.py # CRUD e consultas de projetos filtradas pelo dono
+services/gdd_service.py     # hierarquia, editor, autosave e ordenação
 pages/                    # rotas pequenas e independentes
 styles/                   # design system CSS separado
 migrations/               # evolução versionada do PostgreSQL
@@ -166,10 +172,10 @@ Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snap
 - Ainda não há autenticação. Não publique o app sem proteção externa até a camada de usuários estar implementada.
 - Até lá, o banco não impede sozinho uma associação de tag entre proprietários diferentes; os serviços multiusuário deverão validar ownership em toda escrita, com constraints/RLS em uma migration futura.
 - Capas usam uma URL pública; upload de arquivos exigirá armazenamento de objetos em uma etapa futura.
-- O editor, a estrutura padrão do GDD e o autosave pertencem à Etapa 3.
+- O autosave ocorre quando o Streamlit sincroniza o campo — ao pausar/sair dele ou usar Ctrl+Enter — evitando uma escrita por tecla.
 - Não há dados demonstrativos nem persistência local alternativa.
 - A conexão real e a migration no Neon precisam de credenciais fornecidas por você.
 
 ## Próxima etapa
 
-A **Etapa 3 — GDD** deve implementar categorias, seções e subseções hierárquicas, estrutura padrão, editor Markdown, status, ordenação e autosave com controle de revisão.
+A **Etapa 4 — Dashboard** deve conectar a Home aos projetos reais, mostrando recentes, progresso, totais e última edição.

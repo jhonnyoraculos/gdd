@@ -9,7 +9,7 @@ from typing import Any
 
 import streamlit as st
 
-from pages import archived, favorites, home, ideas, project, projects, recent, settings
+from pages import archived, editor, favorites, home, ideas, project, projects, recent, settings
 from services.database import DatabaseHealth
 from utils.navigation_state import register_navigation_pages
 
@@ -47,6 +47,7 @@ PAGE_SPECS: tuple[PageSpec, ...] = (
         "project",
         "detail",
     ),
+    PageSpec("gdd_editor", "Editor", "Editor GDD", ":material/article:", "gdd", "detail"),
     PageSpec(
         "settings",
         "Configurações",
@@ -71,6 +72,7 @@ def _renderers(
         "ideas": ideas.render,
         "archived": archived.render,
         "project_detail": project.render,
+        "gdd_editor": editor.render,
         "settings": partial(settings.render, health, on_retry),
     }
 
@@ -138,4 +140,4 @@ def render_sidebar(entries: tuple[NavigationEntry, ...]) -> None:
         st.write("")
         with st.container(key="secondary-navigation"):
             _render_page_links(entries, "system")
-        st.caption("Projetos · Etapa 2")
+        st.caption("Editor GDD · Etapa 3")

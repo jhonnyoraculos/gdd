@@ -140,18 +140,24 @@ def _toolbar(owner: OwnerIdentity, project: ProjectDetails) -> None:
             _confirm_delete(owner, project)
 
 
-def _actions() -> None:
+def _actions(project_id: UUID) -> None:
     st.html(
         '<div class="gdd-section-heading"><h2>Workspace do projeto</h2>'
         "<p>Os módulos seguintes serão conectados nas próximas etapas.</p></div>"
     )
+    if st.button(
+        "Abrir GDD",
+        icon=":material/article:",
+        type="primary",
+        use_container_width=True,
+    ):
+        go_to_page("gdd_editor", project=str(project_id))
     labels = (
-        ("Abrir GDD", ":material/article:", "Disponível na Etapa 3"),
         ("Nova nota", ":material/note_add:", "Disponível na Etapa 5"),
         ("Referências", ":material/collections_bookmark:", "Disponível na Etapa 6"),
         ("Histórico", ":material/history:", "Disponível na Etapa 7"),
     )
-    columns = st.columns(4)
+    columns = st.columns(3)
     for column, (label, icon, help_text) in zip(columns, labels, strict=True):
         with column:
             st.button(
@@ -213,4 +219,4 @@ def render() -> None:
             ),
         )
     )
-    _actions()
+    _actions(project.id)

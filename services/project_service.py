@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from models import GddSection, Note, Project, ProjectReference
 from services.database import session_scope
+from services.gdd_templates import add_complete_template
 from services.user_service import OwnerIdentity, get_or_create_owner
 from utils.constants import DEFAULT_ACCENT_COLOR, PROJECT_STATUSES
 
@@ -54,6 +55,7 @@ class ProjectInput:
     start_date: date | None = None
     cover_url: str | None = None
     accent_color: str = DEFAULT_ACCENT_COLOR
+    template_key: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +91,7 @@ class ProjectDetails(ProjectSummary):
     created_at: datetime
     note_count: int
     reference_count: int
+    template_key: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,6 +125,8 @@ def validate_project_input(data: ProjectInput) -> ProjectInput:
         raise ProjectValidationError("O nome deve ter no máximo 160 caracteres.")
     if data.status not in _VALID_STATUSES:
         raise ProjectValidationError("Selecione um status válido.")
+    if data.template_key not in {None, "complete"}:
+        raise ProjectValidationError("Template de GDD inválido.")
 
     accent_color = data.accent_color.strip()
     if not _HEX_COLOR.fullmatch(accent_color):
@@ -145,6 +150,7 @@ def validate_project_input(data: ProjectInput) -> ProjectInput:
         start_date=data.start_date,
         cover_url=cover_url,
         accent_color=accent_color.upper(),
+        template_key=data.template_key,
     )
 
 
@@ -161,6 +167,7 @@ def _project_values(data: ProjectInput) -> dict[str, object]:
         "start_date": data.start_date,
         "cover_url": data.cover_url,
         "accent_color": data.accent_color,
+        "template_key": data.template_key,
     }
 
 
@@ -184,6 +191,8 @@ def create_project(
         project = Project(user_id=user.id, **_project_values(validated))
         session.add(project)
         session.flush()
+        if validated.template_key == "complete":
+            add_complete_template(session, project.id)
         return project.id
 
 
@@ -404,4 +413,5 @@ def get_project(
             finished_section_count=finished_total,
             note_count=notes_total,
             reference_count=references_total,
+            template_key=project.template_key,
         )

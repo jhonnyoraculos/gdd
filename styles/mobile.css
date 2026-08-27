@@ -46,6 +46,15 @@
   .gdd-project-hero__content {
     padding: 0.7rem 0.65rem 1rem;
   }
+
+  .st-key-gdd-outline,
+  .st-key-gdd-document {
+    padding: 0.9rem;
+  }
+
+  .st-key-gdd-document textarea {
+    min-height: 65vh;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

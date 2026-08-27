@@ -396,3 +396,80 @@
   max-width: 720px;
   white-space: pre-wrap;
 }
+
+.st-key-gdd-outline,
+.st-key-gdd-document,
+.st-key-gdd-preview {
+  background: var(--gdd-glass-strong);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-lg);
+  box-shadow: var(--gdd-shadow-sm), inset 0 1px 0 var(--gdd-glass-highlight);
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.gdd-outline-current {
+  background: color-mix(in srgb, var(--gdd-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gdd-accent) 18%, transparent);
+  border-radius: var(--gdd-radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+  padding: 0.85rem;
+}
+
+.gdd-outline-current strong {
+  color: var(--gdd-text);
+}
+
+.gdd-outline-current span {
+  color: var(--gdd-text-muted);
+  font-size: 0.76rem;
+}
+
+.gdd-editor-title {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.gdd-editor-title > span {
+  align-items: center;
+  background: color-mix(in srgb, var(--gdd-accent) 13%, transparent);
+  border-radius: 12px;
+  color: var(--gdd-accent);
+  display: flex;
+  flex: 0 0 2.5rem;
+  font-size: 1.1rem;
+  height: 2.5rem;
+  justify-content: center;
+}
+
+.gdd-editor-title small {
+  color: var(--gdd-text-muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gdd-editor-title h1 {
+  color: var(--gdd-text);
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.st-key-gdd-document textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  line-height: 1.65;
+}
+
+.st-key-gdd-preview {
+  min-height: 520px;
+  margin-top: 0.75rem;
+}
