@@ -18,6 +18,13 @@
     -webkit-backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
     backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
   }
+
+  [class*="st-key-project-card-"],
+  .gdd-project-hero {
+    background: var(--gdd-glass-bg);
+    -webkit-backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
+    backdrop-filter: blur(var(--gdd-blur)) saturate(1.08);
+  }
 }
 
 @media (hover: hover) {
@@ -26,6 +33,16 @@
   }
 
   .gdd-card:hover {
+    border-color: color-mix(in srgb, var(--gdd-accent) 28%, var(--gdd-glass-border));
+    box-shadow: var(--gdd-shadow-lg), inset 0 1px 0 var(--gdd-glass-highlight);
+    transform: translateY(-2px);
+  }
+
+  [class*="st-key-project-card-"] {
+    transition: border-color var(--gdd-transition), box-shadow var(--gdd-transition), transform var(--gdd-transition);
+  }
+
+  [class*="st-key-project-card-"]:hover {
     border-color: color-mix(in srgb, var(--gdd-accent) 28%, var(--gdd-glass-border));
     box-shadow: var(--gdd-shadow-lg), inset 0 1px 0 var(--gdd-glass-highlight);
     transform: translateY(-2px);

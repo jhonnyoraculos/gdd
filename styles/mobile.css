@@ -2,6 +2,10 @@
   .gdd-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .gdd-project-hero {
+    grid-template-columns: minmax(150px, 0.45fr) minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
@@ -23,6 +27,24 @@
 
   .gdd-empty-state {
     margin: 1.5rem auto;
+  }
+
+  .gdd-page-intro {
+    margin-top: 0.4rem;
+  }
+
+  .gdd-project-hero {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.65rem;
+  }
+
+  .gdd-project-hero__cover {
+    aspect-ratio: 16 / 9;
+  }
+
+  .gdd-project-hero__content {
+    padding: 0.7rem 0.65rem 1rem;
   }
 }
 

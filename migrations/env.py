@@ -17,6 +17,22 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+EXTERNAL_TABLES = {"playing_with_neon"}
+
+
+def _include_object(
+    _object: object,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to: object | None,
+) -> bool:
+    """Keep Neon sample tables outside GDD Studio's migration ownership."""
+
+    is_external_table = (
+        type_ == "table" and reflected and compare_to is None and name in EXTERNAL_TABLES
+    )
+    return not is_external_table
 
 
 def _database_url() -> str:
@@ -40,6 +56,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_object=_include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -66,6 +83,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
+            include_object=_include_object,
         )
         with context.begin_transaction():
             context.run_migrations()

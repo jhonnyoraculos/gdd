@@ -1,12 +1,7 @@
-"""Projects route placeholder for the next approved stage."""
+"""Active project library."""
 
-from components.cards import render_empty_state
+from components.project_collection import PROJECTS_COLLECTION, render_project_collection
 
 
 def render() -> None:
-    render_empty_state(
-        "◫",
-        "Espaço preparado para seus jogos",
-        "Criação, edição, arquivamento, favoritos e cards de projeto serão "
-        "implementados na Etapa 2.",
-    )
+    render_project_collection(PROJECTS_COLLECTION)

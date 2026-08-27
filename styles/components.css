@@ -206,3 +206,193 @@
   text-align: left;
   white-space: pre-wrap;
 }
+
+.gdd-page-intro {
+  margin: 1rem 0 1.45rem;
+}
+
+.gdd-page-intro__eyebrow {
+  color: var(--gdd-accent);
+  font-size: 0.74rem;
+  font-weight: 760;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.55rem;
+  text-transform: uppercase;
+}
+
+.gdd-page-intro h1 {
+  color: var(--gdd-text);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin: 0;
+}
+
+.gdd-page-intro p {
+  color: var(--gdd-text-secondary);
+  line-height: 1.55;
+  margin: 0.75rem 0 0;
+}
+
+[class*="st-key-project-card-"] {
+  background: var(--gdd-glass-strong);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-lg);
+  box-shadow: var(--gdd-shadow-sm), inset 0 1px 0 var(--gdd-glass-highlight);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  padding: 0.62rem;
+}
+
+.gdd-project-card__visual {
+  min-width: 0;
+}
+
+.gdd-project-card__cover {
+  aspect-ratio: 16 / 9;
+  background: color-mix(in srgb, var(--gdd-surface) 88%, black);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: calc(var(--gdd-radius-lg) - 6px);
+  overflow: hidden;
+  position: relative;
+}
+
+.gdd-project-card__cover-image,
+.gdd-project-hero__image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.gdd-project-card__cover-fallback,
+.gdd-project-hero__fallback {
+  align-items: center;
+  background:
+    radial-gradient(circle at 72% 25%, color-mix(in srgb, var(--project-accent) 68%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--project-accent) 38%, #101118), #101118 76%);
+  color: rgba(255, 255, 255, 0.88);
+  display: flex;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-weight: 800;
+  height: 100%;
+  justify-content: center;
+  text-shadow: 0 8px 30px rgba(0, 0, 0, 0.24);
+  width: 100%;
+}
+
+.gdd-project-card__content {
+  padding: 1rem 0.42rem 0.72rem;
+}
+
+.gdd-project-card__status-row {
+  align-items: center;
+  color: var(--gdd-text-muted);
+  display: flex;
+  font-size: 0.72rem;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.gdd-project-status {
+  background: color-mix(in srgb, var(--gdd-accent) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gdd-accent) 22%, transparent);
+  border-radius: 999px;
+  color: var(--gdd-accent);
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.035em;
+  padding: 0.28rem 0.58rem;
+  text-transform: uppercase;
+}
+
+.gdd-project-card__content h3 {
+  color: var(--gdd-text);
+  font-size: 1.13rem;
+  letter-spacing: -0.03em;
+  margin: 0.82rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.gdd-project-card__content > p {
+  color: var(--gdd-text-secondary);
+  font-size: 0.82rem;
+  margin: 0.32rem 0 1rem;
+  overflow-wrap: anywhere;
+}
+
+.gdd-project-card__progress-label {
+  color: var(--gdd-text-muted);
+  display: flex;
+  font-size: 0.72rem;
+  justify-content: space-between;
+  margin-bottom: 0.42rem;
+}
+
+.gdd-project-card__progress-label strong {
+  color: var(--gdd-text-secondary);
+}
+
+.gdd-project-card__progress {
+  background: color-mix(in srgb, var(--gdd-text) 9%, transparent);
+  border-radius: 999px;
+  height: 0.36rem;
+  overflow: hidden;
+}
+
+.gdd-project-card__progress span {
+  background: var(--project-accent);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  min-width: 0;
+}
+
+.gdd-project-hero {
+  align-items: center;
+  background: var(--gdd-glass-strong);
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: var(--gdd-radius-xl);
+  box-shadow: var(--gdd-shadow-sm), inset 0 1px 0 var(--gdd-glass-highlight);
+  display: grid;
+  gap: clamp(1.2rem, 3vw, 2rem);
+  grid-template-columns: minmax(180px, 0.34fr) minmax(0, 1fr);
+  margin: 1rem 0 1.25rem;
+  overflow: hidden;
+  padding: clamp(0.7rem, 1.7vw, 1rem);
+}
+
+.gdd-project-hero__cover {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--gdd-glass-border);
+  border-radius: calc(var(--gdd-radius-xl) - 8px);
+  overflow: hidden;
+}
+
+.gdd-project-hero__content {
+  padding: 0.5rem clamp(0.5rem, 2vw, 1.5rem) 0.5rem 0;
+}
+
+.gdd-project-hero__content h1 {
+  color: var(--gdd-text);
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  letter-spacing: -0.065em;
+  line-height: 1;
+  margin: 0.85rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.gdd-project-hero__meta {
+  color: var(--gdd-text-secondary);
+  font-weight: 620;
+  margin: 0.65rem 0 0;
+}
+
+.gdd-project-hero__description {
+  color: var(--gdd-text-secondary);
+  line-height: 1.65;
+  margin: 1rem 0 0;
+  max-width: 720px;
+  white-space: pre-wrap;
+}

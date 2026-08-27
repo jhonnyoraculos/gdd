@@ -8,6 +8,7 @@ import streamlit as st
 
 from components.app_shell import render_topbar
 from components.database_feedback import render_database_feedback
+from components.feedback import render_flash
 from components.navigation import build_navigation, get_entry_for_page, render_sidebar
 from config.settings import AppSettings, ConfigurationError, get_settings
 from services.database import (
@@ -71,6 +72,7 @@ def main() -> None:
 
     render_sidebar(entries)
     render_topbar(current_entry.spec.title, health)
+    render_flash()
 
     if current_entry.spec.requires_database and not health.is_ready:
         render_database_feedback(health, _retry_database)

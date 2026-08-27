@@ -87,8 +87,8 @@ def render(health: DatabaseHealth) -> None:
     if health.state is DatabaseState.READY:
         render_empty_state(
             "✦",
-            "A fundação está pronta",
-            "Na Etapa 2, este espaço receberá a criação, edição e organização dos seus projetos.",
+            "Seu workspace está pronto",
+            "Abra Projetos para criar, editar e organizar seus jogos com persistência no Neon.",
         )
         return
 

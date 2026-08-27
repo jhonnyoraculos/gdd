@@ -56,6 +56,23 @@ def test_invalid_log_level_is_rejected() -> None:
         load_settings({"LOG_LEVEL": "verbose"})
 
 
+def test_workspace_owner_has_stable_valid_defaults_and_normalization() -> None:
+    defaults = load_settings({})
+    configured = load_settings(
+        {"GDD_OWNER_NAME": "Jhonny", "GDD_OWNER_EMAIL": "JHONNY@EXAMPLE.COM"}
+    )
+
+    assert defaults.owner_email == "creator@gdd.local"
+    assert configured.owner_name == "Jhonny"
+    assert configured.owner_email == "jhonny@example.com"
+
+
+@pytest.mark.parametrize("email", ["", "invalid", "@example.com", "name@"])
+def test_invalid_workspace_owner_email_is_rejected(email: str) -> None:
+    with pytest.raises(ConfigurationError, match="GDD_OWNER_EMAIL"):
+        load_settings({"GDD_OWNER_EMAIL": email})
+
+
 @pytest.mark.parametrize(
     "database_url",
     [

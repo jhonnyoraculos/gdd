@@ -1,11 +1,7 @@
-"""Recent projects route placeholder."""
+"""Recently edited active projects."""
 
-from components.cards import render_empty_state
+from components.project_collection import RECENT_COLLECTION, render_project_collection
 
 
 def render() -> None:
-    render_empty_state(
-        "◷",
-        "Seus projetos recentes aparecerão aqui",
-        "Esta visualização será alimentada por atualizações reais do banco a partir da Etapa 2.",
-    )
+    render_project_collection(RECENT_COLLECTION)

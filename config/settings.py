@@ -78,6 +78,8 @@ class AppSettings:
     database_max_overflow: int = 2
     database_connect_timeout: int = 5
     log_level: str = "INFO"
+    owner_name: str = "Criador"
+    owner_email: str = "creator@gdd.local"
 
     @property
     def is_database_configured(self) -> bool:
@@ -127,6 +129,19 @@ def load_settings(environ: Mapping[str, str] | None = None) -> AppSettings:
     if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
         raise ConfigurationError("LOG_LEVEL possui um valor inválido.")
 
+    owner_name = source.get("GDD_OWNER_NAME", "Criador").strip()
+    owner_email = source.get("GDD_OWNER_EMAIL", "creator@gdd.local").strip().casefold()
+    if not owner_name or len(owner_name) > 120:
+        raise ConfigurationError("GDD_OWNER_NAME deve ter entre 1 e 120 caracteres.")
+    if (
+        not owner_email
+        or len(owner_email) > 320
+        or "@" not in owner_email
+        or owner_email.startswith("@")
+        or owner_email.endswith("@")
+    ):
+        raise ConfigurationError("GDD_OWNER_EMAIL possui um valor inválido.")
+
     return AppSettings(
         app_name=source.get("APP_NAME", "GDD Studio").strip() or "GDD Studio",
         environment=source.get("APP_ENV", "development").strip().lower(),
@@ -137,6 +152,8 @@ def load_settings(environ: Mapping[str, str] | None = None) -> AppSettings:
         database_max_overflow=_read_int(source, "DATABASE_MAX_OVERFLOW", 2),
         database_connect_timeout=_read_int(source, "DATABASE_CONNECT_TIMEOUT", 5),
         log_level=log_level,
+        owner_name=owner_name,
+        owner_email=owner_email,
     )
 
 

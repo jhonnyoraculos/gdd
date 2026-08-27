@@ -1,12 +1,7 @@
-"""Archived projects route placeholder."""
+"""Archived project library."""
 
-from components.cards import render_empty_state
+from components.project_collection import ARCHIVED_COLLECTION, render_project_collection
 
 
 def render() -> None:
-    render_empty_state(
-        "□",
-        "Projetos arquivados ficarão aqui",
-        "O fluxo de arquivamento seguro será implementado junto ao gerenciamento "
-        "de projetos na Etapa 2.",
-    )
+    render_project_collection(ARCHIVED_COLLECTION)

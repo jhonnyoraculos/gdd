@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
+import config.settings as settings_module
 from config.settings import get_settings
 
 
@@ -23,6 +24,7 @@ def test_app_starts_with_missing_or_invalid_configuration(
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.delenv("DATABASE_DIRECT_URL", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
+    monkeypatch.setattr(settings_module, "dotenv_values", lambda: {})
     for key, value in invalid_environment.items():
         monkeypatch.setenv(key, value)
     get_settings.cache_clear()

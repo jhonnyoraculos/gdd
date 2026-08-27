@@ -1,6 +1,6 @@
 # GDD Studio
 
-Fundação de uma plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. Esta entrega cobre somente a **Etapa 1** do plano: arquitetura, configuração, persistência, modelos, migrations, design system e navegação.
+Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. Esta entrega cobre as **Etapas 1 e 2**: fundação técnica e gerenciamento completo de projetos.
 
 ## O que já está pronto
 
@@ -11,8 +11,14 @@ Fundação de uma plataforma pessoal para criar e organizar Game Design Document
 - Alembic com uma migration inicial reproduzível.
 - Estados amigáveis para banco não configurado, indisponível ou desatualizado.
 - Testes isolados de configuração, esquema, integridade, transações, navegação, estilos e inicialização do app.
+- Criação e edição de projetos com todos os campos principais, validação e persistência real.
+- Biblioteca com pesquisa, filtro por status, ordenação e paginação.
+- Cards responsivos com capa por URL, progresso, favoritos, arquivamento e restauração.
+- Página individual do projeto com indicadores, metadados e ações seguras.
+- Exclusão permanente protegida por confirmação com o nome do projeto.
+- Todas as consultas e escritas filtradas pelo proprietário configurado do workspace.
 
-As telas de projetos, editor e demais recursos aparecem apenas como rotas preparadas. Elas serão implementadas nas etapas correspondentes, sem dados mockados.
+O editor do GDD e os módulos seguintes permanecem separados para as próximas etapas, sem dados mockados.
 
 ## Requisitos
 
@@ -67,6 +73,8 @@ Exemplo de formato (use os valores reais fornecidos pelo Neon):
 ```env
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST-pooler.neon.tech/DATABASE?sslmode=require
 DATABASE_DIRECT_URL=postgresql+psycopg://USER:PASSWORD@HOST.neon.tech/DATABASE?sslmode=require
+GDD_OWNER_NAME=Criador
+GDD_OWNER_EMAIL=creator@gdd.local
 ```
 
 Nunca versione `.env` ou `.streamlit/secrets.toml`.
@@ -114,6 +122,8 @@ Uma validação PostgreSQL/Neon real depende de uma URL de banco fornecida no am
 ```toml
 DATABASE_URL = "postgresql+psycopg://..."
 DATABASE_DIRECT_URL = "postgresql+psycopg://..."
+GDD_OWNER_NAME = "Criador"
+GDD_OWNER_EMAIL = "creator@gdd.local"
 ```
 
 4. Execute a migration contra o Neon antes de liberar o app.
@@ -128,6 +138,7 @@ components/               # shell, navegação, cards e feedback
 config/                   # leitura e validação do ambiente
 models/                   # modelos SQLAlchemy
 services/database.py      # engine, sessões, health check e migration
+services/project_service.py # CRUD e consultas de projetos filtradas pelo dono
 pages/                    # rotas pequenas e independentes
 styles/                   # design system CSS separado
 migrations/               # evolução versionada do PostgreSQL
@@ -154,11 +165,11 @@ Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snap
 
 - Ainda não há autenticação. Não publique o app sem proteção externa até a camada de usuários estar implementada.
 - Até lá, o banco não impede sozinho uma associação de tag entre proprietários diferentes; os serviços multiusuário deverão validar ownership em toda escrita, com constraints/RLS em uma migration futura.
-- Não há CRUD de projetos; isso pertence à Etapa 2.
-- O editor e o autosave pertencem à Etapa 3.
+- Capas usam uma URL pública; upload de arquivos exigirá armazenamento de objetos em uma etapa futura.
+- O editor, a estrutura padrão do GDD e o autosave pertencem à Etapa 3.
 - Não há dados demonstrativos nem persistência local alternativa.
 - A conexão real e a migration no Neon precisam de credenciais fornecidas por você.
 
 ## Próxima etapa
 
-A **Etapa 2 — Projetos** deve implementar serviços e telas para criar, editar, listar, favoritar, arquivar e excluir projetos, incluindo a página individual do jogo. Cada consulta deverá sempre ser filtrada pelo proprietário.
+A **Etapa 3 — GDD** deve implementar categorias, seções e subseções hierárquicas, estrutura padrão, editor Markdown, status, ordenação e autosave com controle de revisão.

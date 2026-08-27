@@ -70,3 +70,14 @@
 [data-testid="stAlert"] {
   border-radius: var(--gdd-radius-md);
 }
+
+.stTextInput input,
+.stTextArea textarea,
+[data-baseweb="select"] > div,
+.stDateInput input {
+  border-radius: 12px;
+}
+
+[class*="st-key-project-card-"] .stButton > button {
+  min-height: 40px;
+}

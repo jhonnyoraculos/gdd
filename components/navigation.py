@@ -9,8 +9,9 @@ from typing import Any
 
 import streamlit as st
 
-from pages import archived, favorites, home, ideas, projects, recent, settings
+from pages import archived, favorites, home, ideas, project, projects, recent, settings
 from services.database import DatabaseHealth
+from utils.navigation_state import register_navigation_pages
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +40,14 @@ PAGE_SPECS: tuple[PageSpec, ...] = (
     PageSpec("ideas", "Ideias", "Ideias", ":material/lightbulb:", "ideas", "library"),
     PageSpec("archived", "Arquivados", "Arquivados", ":material/archive:", "archived", "library"),
     PageSpec(
+        "project_detail",
+        "Projeto",
+        "Projeto",
+        ":material/sports_esports:",
+        "project",
+        "detail",
+    ),
+    PageSpec(
         "settings",
         "Configurações",
         "Configurações",
@@ -61,6 +70,7 @@ def _renderers(
         "favorites": favorites.render,
         "ideas": ideas.render,
         "archived": archived.render,
+        "project_detail": project.render,
         "settings": partial(settings.render, health, on_retry),
     }
 
@@ -70,7 +80,7 @@ def build_navigation(
     on_retry: Callable[[], None],
 ) -> tuple[NavigationEntry, ...]:
     renderers = _renderers(health, on_retry)
-    return tuple(
+    entries = tuple(
         NavigationEntry(
             spec=spec,
             page=st.Page(
@@ -83,6 +93,8 @@ def build_navigation(
         )
         for spec in PAGE_SPECS
     )
+    register_navigation_pages({entry.spec.key: entry.page for entry in entries})
+    return entries
 
 
 def get_entry_for_page(
@@ -126,4 +138,4 @@ def render_sidebar(entries: tuple[NavigationEntry, ...]) -> None:
         st.write("")
         with st.container(key="secondary-navigation"):
             _render_page_links(entries, "system")
-        st.caption("Fundação · Etapa 1")
+        st.caption("Projetos · Etapa 2")
