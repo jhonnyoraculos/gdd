@@ -11,6 +11,7 @@ import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
 from components.feedback import set_flash
+from components.mentions import render_connections, render_mention_guide
 from config.settings import get_settings
 from services.gdd_service import (
     GddConflictError,
@@ -18,16 +19,26 @@ from services.gdd_service import (
     GddServiceError,
     MoveDirection,
     SectionDocument,
+    SectionImage,
     SectionInput,
     SectionNode,
+    add_section_image,
     create_section,
     delete_section,
+    delete_section_image,
     get_section,
     initialize_complete_template,
+    list_section_images,
     list_sections,
     move_section,
     update_section_content,
     update_section_metadata,
+)
+from services.mention_service import (
+    ContentConnection,
+    ContentSourceType,
+    MentionTarget,
+    get_mention_context,
 )
 from services.project_service import ProjectNotFoundError, get_project
 from services.user_service import OwnerIdentity, owner_from_settings
@@ -149,6 +160,90 @@ def _delete_section(owner: OwnerIdentity, project_id: UUID, section: SectionDocu
         go_to_page("gdd_editor", project=str(project_id))
 
 
+@st.dialog("Adicionar imagem", icon=":material/add_photo_alternate:")
+def _add_image(owner: OwnerIdentity, project_id: UUID, section_id: UUID) -> None:
+    with st.form(f"add-gdd-image-{section_id}", border=False):
+        upload = st.file_uploader(
+            "Imagem",
+            type=["png", "jpg", "jpeg", "webp"],
+            max_upload_size=10,
+            help="A imagem será convertida para WebP e limitada a 854×480.",
+        )
+        caption = st.text_input(
+            "Legenda",
+            max_chars=240,
+            placeholder="Ex.: Referência visual da ambientação",
+        )
+        if upload is not None:
+            st.image(upload, caption=caption or "Prévia", width="stretch")
+        submitted = st.form_submit_button(
+            "Adicionar ao GDD",
+            icon=":material/check:",
+            type="primary",
+            use_container_width=True,
+        )
+    if not submitted:
+        return
+    if upload is None:
+        st.warning("Selecione uma imagem.")
+        return
+    _run(
+        lambda: add_section_image(
+            owner,
+            project_id,
+            section_id,
+            upload.getvalue(),
+            caption,
+        ),
+        "Imagem adicionada em 480p.",
+    )
+
+
+def _image_gallery(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    section: SectionDocument,
+    images: tuple[SectionImage, ...],
+) -> None:
+    title, action = st.columns([1, 0.35], vertical_alignment="center")
+    with title:
+        st.markdown(f"**Imagens de referência · {len(images)}**")
+    with action:
+        if st.button(
+            "Adicionar imagem",
+            icon=":material/add_photo_alternate:",
+            use_container_width=True,
+            key=f"add-image-{section.id}",
+        ):
+            _add_image(owner, project_id, section.id)
+    if not images:
+        st.caption("Adicione concept arts, mapas ou referências visuais a esta seção.")
+        return
+    columns = st.columns(min(3, len(images)))
+    for index, image in enumerate(images):
+        with columns[index % len(columns)]:
+            st.image(
+                image.image_data,
+                caption=image.caption or f"Referência {index + 1}",
+                width="stretch",
+            )
+            if st.button(
+                "Remover",
+                icon=":material/delete:",
+                key=f"delete-gdd-image-{image.id}",
+                use_container_width=True,
+            ):
+                _run(
+                    lambda image_id=image.id: delete_section_image(
+                        owner,
+                        project_id,
+                        section.id,
+                        image_id,
+                    ),
+                    "Imagem removida.",
+                )
+
+
 def _outline(
     owner: OwnerIdentity,
     project_id: UUID,
@@ -205,7 +300,14 @@ def _save_pending(owner: OwnerIdentity, project_id: UUID, section: SectionDocume
         st.rerun()
 
 
-def _document_editor(owner: OwnerIdentity, project_id: UUID, section: SectionDocument) -> None:
+def _document_editor(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    section: SectionDocument,
+    images: tuple[SectionImage, ...],
+    mention_targets: tuple[MentionTarget, ...],
+    connections: tuple[ContentConnection, ...],
+) -> None:
     _save_pending(owner, project_id, section)
     title_col, status_col = st.columns([1, 0.42], vertical_alignment="bottom")
     with title_col:
@@ -255,12 +357,16 @@ def _document_editor(owner: OwnerIdentity, project_id: UUID, section: SectionDoc
         if st.button("", icon=":material/delete:", help="Excluir seção"):
             _delete_section(owner, project_id, section)
 
+    _image_gallery(owner, project_id, section, images)
+    render_mention_guide(mention_targets, f"gdd-{section.id}")
+
     if mode == "Visualizar":
         with st.container(key="gdd-preview", border=False):
             if section.content.strip():
                 st.markdown(section.content)
             else:
                 st.caption("Esta seção ainda está vazia.")
+            render_connections(connections, project_id, f"gdd-preview-{section.id}")
         return
 
     content_key = f"gdd-content-{section.id}-{section.revision}"
@@ -279,6 +385,7 @@ def _document_editor(owner: OwnerIdentity, project_id: UUID, section: SectionDoc
         _save_pending(owner, project_id, section)
     if st.button("Salvar agora", icon=":material/save:", type="primary"):
         _save_pending(owner, project_id, section)
+    render_connections(connections, project_id, f"gdd-edit-{section.id}")
 
 
 def _empty_gdd(owner: OwnerIdentity, project_id: UUID) -> None:
@@ -330,6 +437,15 @@ def render() -> None:
     selected_id = requested if requested in {node.id for node, _ in flat} else flat[0][0].id
     try:
         document = get_section(owner, project_id, selected_id)
+        images = list_section_images(owner, project_id, selected_id)
+        mention_context = get_mention_context(
+            owner,
+            project_id,
+            ContentSourceType.SECTION,
+            selected_id,
+        )
+        mention_targets = mention_context.targets
+        connections = mention_context.connections
     except (GddNotFoundError, SQLAlchemyError):
         st.error("Não foi possível abrir esta seção.")
         return
@@ -337,4 +453,11 @@ def render() -> None:
     with outline, st.container(key="gdd-outline", border=False):
         _outline(owner, project_id, nodes, selected_id)
     with editor, st.container(key="gdd-document", border=False):
-        _document_editor(owner, project_id, document)
+        _document_editor(
+            owner,
+            project_id,
+            document,
+            images,
+            mention_targets,
+            connections,
+        )

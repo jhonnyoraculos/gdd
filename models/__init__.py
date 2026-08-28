@@ -7,6 +7,8 @@ from models.base import Base
 from models.chapter import Chapter
 from models.character import Character
 from models.character_relationship import CharacterRelationship
+from models.content_link import ContentLink
+from models.gdd_image import GddSectionImage
 from models.idea import Idea
 from models.note import Note
 from models.project import Project
@@ -24,7 +26,9 @@ __all__ = [
     "Character",
     "CharacterRelationship",
     "Chapter",
+    "ContentLink",
     "GddSection",
+    "GddSectionImage",
     "Idea",
     "Note",
     "Project",

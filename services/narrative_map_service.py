@@ -14,6 +14,8 @@ from models import (
     Chapter,
     Character,
     CharacterRelationship,
+    ContentLink,
+    GddSection,
     Project,
     Scene,
     SceneCharacter,
@@ -35,12 +37,14 @@ class MapNodeType(StrEnum):
     CHAPTER = "chapter"
     SCENE = "scene"
     CHARACTER = "character"
+    SECTION = "section"
 
 
 class MapEdgeType(StrEnum):
     HIERARCHY = "hierarchy"
     APPEARANCE = "appearance"
     RELATIONSHIP = "relationship"
+    MENTION = "mention"
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +141,29 @@ def get_narrative_map(
                 CharacterRelationship.id,
             )
         ).all()
+        content_links = session.scalars(
+            select(ContentLink)
+            .where(ContentLink.project_id == project_id)
+            .order_by(ContentLink.created_at, ContentLink.id)
+        ).all()
+        linked_section_ids = {
+            section_id
+            for link in content_links
+            for section_id in (link.source_section_id, link.target_section_id)
+            if section_id is not None
+        }
+        sections = (
+            session.scalars(
+                select(GddSection)
+                .where(
+                    GddSection.project_id == project_id,
+                    GddSection.id.in_(linked_section_ids),
+                )
+                .order_by(GddSection.position, GddSection.id)
+            ).all()
+            if linked_section_ids
+            else []
+        )
 
         scenes_by_chapter: defaultdict[UUID, list[Scene]] = defaultdict(list)
         for scene in scenes:
@@ -144,6 +171,7 @@ def get_narrative_map(
         chapter_by_id = {chapter.id: chapter for chapter in chapters}
         scene_by_id = {scene.id: scene for scene in scenes}
         character_by_id = {character.id: character for character in characters}
+        section_by_id = {section.id: section for section in sections}
 
         cast_by_scene: defaultdict[UUID, list[Character]] = defaultdict(list)
         scenes_by_character: defaultdict[UUID, list[Scene]] = defaultdict(list)
@@ -173,6 +201,7 @@ def get_narrative_map(
                     MapMetric("Capítulos", str(len(chapters))),
                     MapMetric("Cenas", str(len(scenes))),
                     MapMetric("Personagens", str(len(characters))),
+                    MapMetric("Conexões @", str(len(content_links))),
                 ),
                 items_title="Capítulos",
                 items=tuple(chapter.title for chapter in chapters),
@@ -272,6 +301,43 @@ def get_narrative_map(
                 )
             )
 
+        section_connections: defaultdict[UUID, list[str]] = defaultdict(list)
+        for link in content_links:
+            if link.source_section_id is None:
+                continue
+            target_label = None
+            if link.target_character_id in character_by_id:
+                target_label = character_by_id[link.target_character_id].name
+            elif link.target_scene_id in scene_by_id:
+                target_label = scene_by_id[link.target_scene_id].title
+            elif link.target_chapter_id in chapter_by_id:
+                target_label = chapter_by_id[link.target_chapter_id].title
+            elif link.target_section_id in section_by_id:
+                target_label = section_by_id[link.target_section_id].title
+            if target_label:
+                section_connections[link.source_section_id].append(target_label)
+
+        for section in sections:
+            connected_labels = section_connections[section.id]
+            nodes.append(
+                NarrativeMapNode(
+                    key=_key(MapNodeType.SECTION, section.id),
+                    entity_id=section.id,
+                    node_type=MapNodeType.SECTION,
+                    label=section.title,
+                    subtitle="Seção do GDD",
+                    description=None,
+                    href=_href(
+                        "gdd_editor",
+                        project=str(project_id),
+                        section=str(section.id),
+                    ),
+                    metrics=(MapMetric("Conexões", str(len(connected_labels))),),
+                    items_title="Referências",
+                    items=tuple(connected_labels),
+                )
+            )
+
         for appearance in appearances:
             if (
                 appearance.scene_id not in scene_by_id
@@ -301,6 +367,39 @@ def get_narrative_map(
                     target=_key(MapNodeType.CHARACTER, relationship.target_character_id),
                     edge_type=MapEdgeType.RELATIONSHIP,
                     label=relationship.relationship_type,
+                    directed=True,
+                )
+            )
+
+        def mention_node(link: ContentLink, source: bool) -> str | None:
+            if source:
+                if link.source_section_id in section_by_id:
+                    return _key(MapNodeType.SECTION, link.source_section_id)
+                if link.source_scene_id in scene_by_id:
+                    return _key(MapNodeType.SCENE, link.source_scene_id)
+                return None
+            if link.target_character_id in character_by_id:
+                return _key(MapNodeType.CHARACTER, link.target_character_id)
+            if link.target_scene_id in scene_by_id:
+                return _key(MapNodeType.SCENE, link.target_scene_id)
+            if link.target_chapter_id in chapter_by_id:
+                return _key(MapNodeType.CHAPTER, link.target_chapter_id)
+            if link.target_section_id in section_by_id:
+                return _key(MapNodeType.SECTION, link.target_section_id)
+            return None
+
+        for link in content_links:
+            source = mention_node(link, True)
+            target = mention_node(link, False)
+            if source is None or target is None:
+                continue
+            edges.append(
+                NarrativeMapEdge(
+                    key=f"mention:{link.id}",
+                    source=source,
+                    target=target,
+                    edge_type=MapEdgeType.MENTION,
+                    label=link.mention_token,
                     directed=True,
                 )
             )

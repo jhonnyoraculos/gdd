@@ -166,6 +166,7 @@ _DOCUMENT = r"""
   .legend-chapter { background: #7697f8; }
   .legend-scene { background: #55b99a; }
   .legend-character { background: #b181ef; }
+  .legend-section { background: #ed9f56; }
   .edge {
     stroke: var(--edge);
     stroke-linecap: round;
@@ -174,6 +175,7 @@ _DOCUMENT = r"""
   }
   .edge-appearance { stroke: color-mix(in srgb, #55b99a 58%, var(--edge)); stroke-dasharray: 5 6; }
   .edge-relationship { stroke: color-mix(in srgb, #b181ef 70%, var(--edge)); stroke-width: 2; }
+  .edge-mention { stroke: color-mix(in srgb, #ed9f56 76%, var(--edge)); stroke-dasharray: 3 5; stroke-width: 2.2; }
   .edge.is-active { stroke: var(--accent); stroke-width: 3; opacity: 1; }
   .edge.is-dimmed, .edge-label.is-dimmed { opacity: .08; }
   .edge-label {
@@ -201,6 +203,7 @@ _DOCUMENT = r"""
   .node-chapter rect { fill: color-mix(in srgb, #7697f8 18%, var(--surface)); }
   .node-scene rect { fill: color-mix(in srgb, #55b99a 17%, var(--surface)); }
   .node-character rect { fill: color-mix(in srgb, #b181ef 17%, var(--surface)); }
+  .node-section rect { fill: color-mix(in srgb, #ed9f56 18%, var(--surface)); }
   .node-type-label { fill: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
   .node-label { fill: var(--text); font-size: 13px; font-weight: 750; }
   .node-subtitle { fill: var(--muted); font-size: 10px; }
@@ -276,6 +279,7 @@ _DOCUMENT = r"""
         <span><i class="legend-chapter"></i>Capítulo</span>
         <span><i class="legend-scene"></i>Cena</span>
         <span><i class="legend-character"></i>Personagem</span>
+        <span><i class="legend-section"></i>Seção GDD / @menção</span>
       </div>
     </section>
     <aside id="panel" class="node-panel" aria-live="polite"></aside>
@@ -293,7 +297,7 @@ _DOCUMENT = r"""
   const NS = "http://www.w3.org/2000/svg";
   const NODE_WIDTH = 170;
   const NODE_HEIGHT = 66;
-  const typeLabels = {project: "Projeto", chapter: "Capítulo", scene: "Cena", character: "Personagem"};
+  const typeLabels = {project: "Projeto", chapter: "Capítulo", scene: "Cena", character: "Personagem", section: "Seção GDD"};
   const nodes = data.nodes.map(node => ({...node, x: 0, y: 0, element: null}));
   const edges = data.edges.map(edge => ({...edge, element: null, labelElement: null}));
   const nodeById = new Map(nodes.map(node => [node.id, node]));
@@ -324,10 +328,12 @@ _DOCUMENT = r"""
   const chapterNodes = nodes.filter(node => node.type === "chapter");
   const sceneNodes = nodes.filter(node => node.type === "scene");
   const characterNodes = nodes.filter(node => node.type === "character");
+  const sectionNodes = nodes.filter(node => node.type === "section");
   projectNodes.forEach(node => { node.x = WORLD_WIDTH / 2; node.y = 88; });
   let nextY = distribute(chapterNodes, 230) + 85;
   nextY = distribute(sceneNodes, nextY) + 85;
   nextY = distribute(characterNodes, nextY) + 90;
+  nextY = distribute(sectionNodes, nextY) + 90;
   const WORLD_HEIGHT = Math.max(720, nextY);
   let view = {x: 0, y: 0, w: WORLD_WIDTH, h: WORLD_HEIGHT};
 
@@ -375,7 +381,7 @@ _DOCUMENT = r"""
     if (edge.directed) line.setAttribute("marker-end", "url(#arrow)");
     edge.element = line;
     edgeLayer.appendChild(line);
-    if (edge.type === "relationship" && edge.label) {
+    if ((edge.type === "relationship" || edge.type === "mention") && edge.label) {
       const label = svgElement("text", {class: "edge-label", "data-edge-id": edge.id});
       label.textContent = truncate(edge.label, 22);
       edge.labelElement = label;

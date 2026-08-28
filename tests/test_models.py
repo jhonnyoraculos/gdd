@@ -28,6 +28,8 @@ EXPECTED_TABLES = {
     "scenes",
     "scene_characters",
     "character_relationships",
+    "content_links",
+    "gdd_section_images",
 }
 
 

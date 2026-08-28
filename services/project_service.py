@@ -18,9 +18,9 @@ from services.database import session_scope
 from services.gdd_templates import add_complete_template
 from services.user_service import OwnerIdentity, get_or_create_owner
 from utils.constants import DEFAULT_ACCENT_COLOR, PROJECT_STATUSES
+from utils.image_processing import ImageProcessingError, process_image_480p
 
 MAX_PROJECTS_PER_PAGE = 48
-MAX_COVER_IMAGE_BYTES = 3 * 1024 * 1024
 _VALID_STATUSES = {option.value for option in PROJECT_STATUSES}
 _HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$")
 
@@ -133,16 +133,6 @@ def _clean_optional(value: str | None, maximum: int, field: str) -> str | None:
     return cleaned
 
 
-def _cover_image_mime(image: bytes) -> str | None:
-    if image.startswith(b"\x89PNG\r\n\x1a\n"):
-        return "image/png"
-    if image.startswith(b"\xff\xd8\xff"):
-        return "image/jpeg"
-    if len(image) >= 12 and image.startswith(b"RIFF") and image[8:12] == b"WEBP":
-        return "image/webp"
-    return None
-
-
 def validate_project_input(data: ProjectInput) -> ProjectInput:
     name = data.name.strip()
     if not name:
@@ -162,11 +152,12 @@ def validate_project_input(data: ProjectInput) -> ProjectInput:
     cover_image_mime = None
     cover_url = _clean_optional(data.cover_url, 2048, "A URL da capa")
     if cover_image:
-        if len(cover_image) > MAX_COVER_IMAGE_BYTES:
-            raise ProjectValidationError("A capa deve ter no máximo 3 MB.")
-        cover_image_mime = _cover_image_mime(cover_image)
-        if cover_image_mime is None:
-            raise ProjectValidationError("Envie a capa em formato PNG, JPG ou WebP.")
+        try:
+            processed = process_image_480p(cover_image)
+        except ImageProcessingError as exc:
+            raise ProjectValidationError(str(exc)) from exc
+        cover_image = processed.data
+        cover_image_mime = processed.mime_type
         cover_url = None
     elif data.cover_image_mime:
         raise ProjectValidationError("Os dados da imagem da capa estão incompletos.")

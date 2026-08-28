@@ -206,12 +206,16 @@ def sync_scene_characters(
                     SceneCharacter.character_id.in_(removed),
                 )
             )
+        for link in links:
+            if link.character_id in requested:
+                link.mention_generated = False
         for character_id in requested - current:
             session.add(
                 SceneCharacter(
                     project_id=project_id,
                     scene_id=scene_id,
                     character_id=character_id,
+                    mention_generated=False,
                 )
             )
         if current != requested:
@@ -251,6 +255,7 @@ def update_appearance_details(
             raise AppearanceNotFoundError("Este personagem não está vinculado à cena.")
         link.role_in_scene = role or None
         link.notes = clean_notes or None
+        link.mention_generated = False
         now = datetime.now(UTC)
         scene.updated_at = now
         project.updated_at = now

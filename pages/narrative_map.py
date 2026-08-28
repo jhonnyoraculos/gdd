@@ -74,11 +74,12 @@ def render() -> None:
         '<div class="gdd-page-intro">'
         "<span>Base de conhecimento visual</span>"
         f"<h1>Mapa Narrativo · {escape(graph.project_name)}</h1>"
-        "<p>Explore capítulos, cenas, personagens, aparições e relações reais do projeto.</p>"
+        "<p>Explore capítulos, cenas, personagens, seções e @menções reais do projeto.</p>"
         "</div>"
     )
 
     relationship_edges = sum(edge.edge_type == MapEdgeType.RELATIONSHIP for edge in graph.edges)
+    mention_edges = sum(edge.edge_type == MapEdgeType.MENTION for edge in graph.edges)
     render_card_grid(
         (
             InfoCard(
@@ -104,6 +105,12 @@ def render() -> None:
                 "Relações",
                 str(relationship_edges),
                 "Conexões direcionais entre personagens.",
+            ),
+            InfoCard(
+                "@",
+                "Menções",
+                str(mention_edges),
+                f"{graph.count(MapNodeType.SECTION)} seções do GDD conectadas.",
             ),
         )
     )

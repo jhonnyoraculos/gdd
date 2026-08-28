@@ -9,6 +9,8 @@ import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
 from components.feedback import set_flash
+from components.mentions import render_mention_guide
+from services.mention_service import list_mention_targets
 from services.narrative_service import (
     ChapterDetails,
     ChapterInput,
@@ -145,6 +147,10 @@ def show_create_scene_dialog(
     chapters: tuple[ChapterDetails, ...],
     chapter_id: UUID,
 ) -> None:
+    render_mention_guide(
+        list_mention_targets(owner, project_id),
+        f"create-scene-{chapter_id}",
+    )
     data = _scene_fields(None, chapters, chapter_id, f"create-scene-{chapter_id}")
     if data is None:
         return
@@ -163,6 +169,10 @@ def show_edit_scene_dialog(
     scene: SceneDetails,
     chapters: tuple[ChapterDetails, ...],
 ) -> None:
+    render_mention_guide(
+        list_mention_targets(owner, scene.project_id),
+        f"edit-scene-{scene.id}",
+    )
     data = _scene_fields(
         scene,
         chapters,

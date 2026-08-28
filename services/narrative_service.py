@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from models import Chapter, Project, Scene
 from services.database import session_scope
+from services.mention_service import ContentSourceType, sync_content_links
 from services.user_service import OwnerIdentity, get_or_create_owner
 
 MAX_SUMMARY_LENGTH = 20_000
@@ -303,6 +304,13 @@ def create_scene(
         )
         session.add(scene)
         session.flush()
+        sync_content_links(
+            session,
+            project_id,
+            ContentSourceType.SCENE,
+            scene.id,
+            "\n".join(filter(None, (validated.summary, validated.content))),
+        )
         _resequence_timeline(session, project_id)
         project.updated_at = datetime.now(UTC)
         return scene.id
@@ -337,6 +345,13 @@ def update_scene(
         scene.summary = validated.summary
         scene.content = validated.content
         session.flush()
+        sync_content_links(
+            session,
+            project_id,
+            ContentSourceType.SCENE,
+            scene.id,
+            "\n".join(filter(None, (validated.summary, validated.content))),
+        )
         _resequence_timeline(session, project_id)
         project.updated_at = datetime.now(UTC)
 

@@ -10,11 +10,13 @@ from uuid import UUID
 from sqlalchemy import Engine, func, select
 from sqlalchemy.orm import Session
 
-from models import GddSection, Project
+from models import GddSection, GddSectionImage, Project
 from services.database import session_scope
 from services.gdd_templates import add_complete_template
+from services.mention_service import ContentSourceType, sync_content_links
 from services.user_service import OwnerIdentity, get_or_create_owner
 from utils.constants import SECTION_STATUSES
+from utils.image_processing import ImageProcessingError, process_image_480p
 
 _VALID_STATUSES = {item.value for item in SECTION_STATUSES}
 _VALID_TYPES = {"category", "group", "page"}
@@ -63,6 +65,17 @@ class SectionNode:
 @dataclass(frozen=True, slots=True)
 class SectionDocument(SectionNode):
     content: str
+
+
+@dataclass(frozen=True, slots=True)
+class SectionImage:
+    id: UUID
+    caption: str | None
+    image_data: bytes
+    mime_type: str
+    width: int
+    height: int
+    position: int
 
 
 def _project(session: Session, owner: OwnerIdentity, project_id: UUID) -> Project:
@@ -240,9 +253,124 @@ def update_section_content(
         if item.revision != expected_revision:
             raise GddConflictError("Esta seção foi alterada em outra sessão. Recarregue a página.")
         item.content = content
+        sync_content_links(
+            session,
+            project_id,
+            ContentSourceType.SECTION,
+            section_id,
+            content,
+        )
         project.updated_at = datetime.now(UTC)
         session.flush()
         return item.revision
+
+
+def list_section_images(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    section_id: UUID,
+    engine: Engine | None = None,
+) -> tuple[SectionImage, ...]:
+    with session_scope(engine) as session:
+        _project(session, owner, project_id)
+        _section(session, project_id, section_id)
+        images = session.scalars(
+            select(GddSectionImage)
+            .where(
+                GddSectionImage.project_id == project_id,
+                GddSectionImage.section_id == section_id,
+            )
+            .order_by(GddSectionImage.position, GddSectionImage.id)
+        ).all()
+        return tuple(
+            SectionImage(
+                item.id,
+                item.caption,
+                item.image_data,
+                item.mime_type,
+                item.width,
+                item.height,
+                item.position,
+            )
+            for item in images
+        )
+
+
+def add_section_image(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    section_id: UUID,
+    image_data: bytes,
+    caption: str | None = None,
+    engine: Engine | None = None,
+) -> UUID:
+    clean_caption = caption.strip() if caption else None
+    if clean_caption and len(clean_caption) > 240:
+        raise GddServiceError("A legenda deve ter no máximo 240 caracteres.")
+    try:
+        processed = process_image_480p(image_data)
+    except ImageProcessingError as exc:
+        raise GddServiceError(str(exc)) from exc
+    with session_scope(engine) as session:
+        project = _project(session, owner, project_id)
+        _section(session, project_id, section_id)
+        image_count = (
+            session.scalar(
+                select(func.count(GddSectionImage.id)).where(
+                    GddSectionImage.project_id == project_id,
+                    GddSectionImage.section_id == section_id,
+                )
+            )
+            or 0
+        )
+        if image_count >= 24:
+            raise GddServiceError("Esta seção já possui o limite de 24 imagens.")
+        max_position = (
+            session.scalar(
+                select(func.max(GddSectionImage.position)).where(
+                    GddSectionImage.project_id == project_id,
+                    GddSectionImage.section_id == section_id,
+                )
+            )
+            or 0
+        )
+        image = GddSectionImage(
+            project_id=project_id,
+            section_id=section_id,
+            caption=clean_caption,
+            image_data=processed.data,
+            mime_type=processed.mime_type,
+            width=processed.width,
+            height=processed.height,
+            position=max_position + 1000,
+        )
+        session.add(image)
+        project.updated_at = datetime.now(UTC)
+        session.flush()
+        return image.id
+
+
+def delete_section_image(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    section_id: UUID,
+    image_id: UUID,
+    engine: Engine | None = None,
+) -> None:
+    with session_scope(engine) as session:
+        project = _project(session, owner, project_id)
+        _section(session, project_id, section_id)
+        image = session.scalar(
+            select(GddSectionImage).where(
+                GddSectionImage.id == image_id,
+                GddSectionImage.project_id == project_id,
+                GddSectionImage.section_id == section_id,
+            )
+        )
+        if image is None:
+            raise GddNotFoundError("Imagem não encontrada.")
+        session.delete(image)
+        project.updated_at = datetime.now(UTC)
 
 
 def move_section(

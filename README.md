@@ -21,6 +21,9 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Categorias, grupos, páginas e subseções personalizadas sem limite fixo de profundidade.
 - Editor Markdown com modos Editar/Visualizar, status e progresso automático.
 - Autosave ao pausar/sair do campo, botão Salvar agora e controle otimista de revisão.
+- Galeria de imagens por seção do GDD, convertidas para WebP e limitadas a 854×480.
+- Menções automáticas com `@` conectando seções, cenas, capítulos e personagens.
+- Personagens mencionados no roteiro entram automaticamente no elenco da cena.
 - Ordenação segura por botões Subir/Descer e exclusão em cascata confirmada.
 - Biblioteca de personagens por projeto com pesquisa, filtro por papel, ordenação e cards responsivos.
 - Ficha completa com identificação, visão geral, história, personalidade, objetivos, arco narrativo, aparência e gameplay.
@@ -163,6 +166,8 @@ services/narrative_service.py # capítulos, cenas e ordem narrativa
 services/appearance_service.py # elenco das cenas e aparições calculadas
 services/relationship_service.py # grafo direcional entre personagens
 services/narrative_map_service.py # projeção relacional para o mapa interativo
+services/mention_service.py # resolução de @menções e conexões automáticas
+utils/image_processing.py # conversão segura de uploads para WebP 480p
 pages/                    # rotas pequenas e independentes
 styles/                   # design system CSS separado
 migrations/               # evolução versionada do PostgreSQL
@@ -186,6 +191,8 @@ tests/                    # testes rápidos isolados
 - `chapters` e `scenes` (estrutura e ordem narrativa)
 - `scene_characters` (vínculos de aparição personagem–cena)
 - `character_relationships` (relações direcionais personagem–personagem)
+- `gdd_section_images` (imagens WebP 480p vinculadas às seções)
+- `content_links` (conexões automáticas criadas por @menções)
 
 Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snapshots usam JSONB no PostgreSQL. Seções, notas e itens de roadmap possuem revisão otimista para preparar o autosave sem sobrescritas silenciosas.
 
@@ -193,7 +200,7 @@ Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snap
 
 - Ainda não há autenticação. Não publique o app sem proteção externa até a camada de usuários estar implementada.
 - Até lá, o banco não impede sozinho uma associação de tag entre proprietários diferentes; os serviços multiusuário deverão validar ownership em toda escrita, com constraints/RLS em uma migration futura.
-- Capas PNG, JPG e WebP de até 3 MB são armazenadas diretamente no Neon.
+- Capas e imagens do GDD são convertidas para WebP 480p antes de serem armazenadas no Neon.
 - Retratos de personagens usam URL pública; upload direto ainda não possui armazenamento de objetos.
 - Pesquisa, filtros e modos de foco do mapa pertencem à próxima etapa do novo sistema.
 - O autosave ocorre quando o Streamlit sincroniza o campo — ao pausar/sair dele ou usar Ctrl+Enter — evitando uma escrita por tecla.

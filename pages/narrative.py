@@ -15,6 +15,7 @@ from components.appearance_forms import (
 )
 from components.cards import render_empty_state
 from components.feedback import set_flash
+from components.mentions import render_connections
 from components.narrative_forms import (
     show_create_chapter_dialog,
     show_create_scene_dialog,
@@ -26,6 +27,12 @@ from services.appearance_service import (
     AppearanceServiceError,
     ProjectAppearanceIndex,
     get_project_appearance_index,
+)
+from services.mention_service import (
+    ContentConnection,
+    ContentSourceType,
+    MentionServiceError,
+    list_project_connections,
 )
 from services.narrative_service import (
     ChapterDetails,
@@ -105,6 +112,7 @@ def _scene_card(
     index: int,
     total: int,
     appearance_index: ProjectAppearanceIndex,
+    connections: tuple[ContentConnection, ...],
 ) -> None:
     with st.container(key=f"narrative-scene-{scene.id}", border=False):
         info, actions = st.columns([1, 0.52], vertical_alignment="center")
@@ -149,6 +157,7 @@ def _scene_card(
         if scene.content:
             with st.expander("Ver conteúdo da cena"):
                 st.markdown(scene.content)
+        render_connections(connections, scene.project_id, f"scene-{scene.id}")
         cast = appearance_index.cast_for(scene.id)
         with st.expander(f"Personagens da cena ({len(cast)})", expanded=bool(cast)):
             if not cast:
@@ -193,6 +202,7 @@ def _chapter_card(
     chapters: tuple[ChapterDetails, ...],
     index: int,
     appearance_index: ProjectAppearanceIndex,
+    connections_by_scene: dict[UUID, tuple[ContentConnection, ...]],
 ) -> None:
     with st.container(key=f"narrative-chapter-{chapter.id}", border=False):
         info, actions = st.columns([1, 0.58], vertical_alignment="center")
@@ -256,6 +266,7 @@ def _chapter_card(
                 scene_index,
                 len(chapter.scenes),
                 appearance_index,
+                connections_by_scene.get(scene.id, ()),
             )
 
 
@@ -272,7 +283,13 @@ def render() -> None:
         project = get_project(owner, project_id)
         chapters = list_narrative(owner, project_id)
         appearance_index = get_project_appearance_index(owner, project_id)
-    except (ProjectNotFoundError, NarrativeNotFoundError, AppearanceServiceError):
+        project_connections = list_project_connections(owner, project_id)
+    except (
+        ProjectNotFoundError,
+        NarrativeNotFoundError,
+        AppearanceServiceError,
+        MentionServiceError,
+    ):
         render_empty_state("?", "Projeto não encontrado", "Este projeto não está disponível.")
         return
     except SQLAlchemyError:
@@ -319,5 +336,22 @@ def render() -> None:
             "Crie o primeiro capítulo para começar a organizar suas cenas.",
         )
         return
+    connections_by_scene = {
+        scene.id: tuple(
+            connection
+            for connection in project_connections
+            if connection.source_type is ContentSourceType.SCENE
+            and connection.source_id == scene.id
+        )
+        for chapter in chapters
+        for scene in chapter.scenes
+    }
     for index, chapter in enumerate(chapters):
-        _chapter_card(owner, chapter, chapters, index, appearance_index)
+        _chapter_card(
+            owner,
+            chapter,
+            chapters,
+            index,
+            appearance_index,
+            connections_by_scene,
+        )

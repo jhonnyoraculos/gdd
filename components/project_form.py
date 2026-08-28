@@ -95,8 +95,8 @@ def _project_fields(project: ProjectDetails | None, form_key: str) -> ProjectInp
         cover_upload = st.file_uploader(
             "Imagem da capa",
             type=["png", "jpg", "jpeg", "webp"],
-            max_upload_size=3,
-            help="Envie uma imagem PNG, JPG ou WebP de até 3 MB.",
+            max_upload_size=10,
+            help="PNG, JPG ou WebP até 10 MB. A imagem será convertida para 480p.",
         )
         remove_cover = bool(current_cover) and st.checkbox("Remover capa atual")
         if cover_upload is not None:
