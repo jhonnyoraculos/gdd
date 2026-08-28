@@ -98,6 +98,7 @@ _HTML = """
         <button id="zoomIn" type="button" title="Aproximar" aria-label="Aproximar">+</button>
         <button id="zoomOut" type="button" title="Afastar" aria-label="Afastar">−</button>
         <button id="fit" type="button" title="Enquadrar mapa">Enquadrar</button>
+        <button id="reorganize" type="button" title="Restaurar a ordem narrativa">Reorganizar</button>
         <button id="clear" type="button" title="Limpar seleção">Limpar seleção</button>
         <button id="fullscreen" type="button" title="Usar a tela inteira">Tela cheia</button>
       </div>
@@ -105,6 +106,9 @@ _HTML = """
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"></path>
+          </marker>
+          <marker id="sequenceArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#168aad"></path>
           </marker>
         </defs>
         <g id="edgeLayer"></g>
@@ -115,6 +119,7 @@ _HTML = """
         <span><i class="legend-project"></i>Projeto</span>
         <span><i class="legend-chapter"></i>Capítulo</span>
         <span><i class="legend-scene"></i>Cena</span>
+        <span><i class="legend-sequence"></i>Próxima cena</span>
         <span><i class="legend-character"></i>Personagem</span>
         <span><i class="legend-section"></i>Seção GDD</span>
         <span><i class="legend-manual"></i>Ligação criada</span>
@@ -177,12 +182,13 @@ button, a { font: inherit; }
 .map-legend { align-items: center; backdrop-filter: blur(12px); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; bottom: 14px; display: flex; flex-wrap: wrap; gap: 9px 12px; left: 14px; padding: 8px 10px; position: absolute; z-index: 4; }
 .map-legend span { align-items: center; color: var(--muted); display: flex; font-size: 11px; gap: 5px; }
 .map-legend i { border-radius: 50%; display: inline-block; height: 8px; width: 8px; }
-.legend-project { background: var(--accent); } .legend-chapter { background: #7697f8; } .legend-scene { background: #55b99a; } .legend-character { background: #b181ef; } .legend-section { background: #ed9f56; } .legend-manual { background: #f4cb55; }
-.edge { stroke: var(--edge); stroke-linecap: round; stroke-width: 1.6; transition: opacity .18s ease, stroke .18s ease, stroke-width .18s ease; }
+.legend-project { background: var(--accent); } .legend-chapter { background: #7697f8; } .legend-scene { background: #55b99a; } .legend-sequence { background: #168aad; } .legend-character { background: #b181ef; } .legend-section { background: #ed9f56; } .legend-manual { background: #f4cb55; }
+.edge { opacity: .24; stroke: var(--edge); stroke-linecap: round; stroke-width: 1.6; transition: opacity .18s ease, stroke .18s ease, stroke-width .18s ease; }
+.edge-sequence { opacity: .94; stroke: #168aad; stroke-width: 2.8; }
 .edge-appearance { stroke: color-mix(in srgb, #55b99a 58%, var(--edge)); stroke-dasharray: 5 6; }
 .edge-relationship { stroke: color-mix(in srgb, #b181ef 70%, var(--edge)); stroke-width: 2; }
 .edge-mention { stroke: color-mix(in srgb, #ed9f56 76%, var(--edge)); stroke-dasharray: 3 5; stroke-width: 2.1; }
-.edge-manual { stroke: #e7b72d; stroke-dasharray: 9 4; stroke-width: 2.5; }
+.edge-manual { opacity: .72; stroke: #e7b72d; stroke-dasharray: 9 4; stroke-width: 2.5; }
 .edge.is-active { stroke: var(--accent); stroke-width: 3.2; opacity: 1; }
 .edge.is-dimmed, .edge-label.is-dimmed { opacity: .055; }
 .edge-label { fill: var(--muted); font-size: 10px; font-weight: 700; paint-order: stroke; pointer-events: none; stroke: var(--bg); stroke-width: 4px; text-anchor: middle; transition: opacity .18s ease; }
@@ -242,16 +248,14 @@ export default function(component) {
   const nodes = data.nodes.map(node => ({...node, x: 0, y: 0, element: null}));
   const edges = data.edges.map(edge => ({...edge, element: null, labelElement: null}));
   const nodeById = new Map(nodes.map(node => [node.id, node]));
-  const storageKey = `gdd-map-editor:${data.projectId}`;
+  const storageKey = `gdd-map-editor:v2:${data.projectId}`;
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch (_) { saved = {}; }
-  const typeCounts = nodes.reduce((counts, node) => { counts[node.type] = (counts[node.type] || 0) + 1; return counts; }, {});
-  const largestLayer = Math.max(1, ...Object.values(typeCounts));
-  const WORLD_WIDTH = Math.max(900, Math.min(1900, largestLayer * 214 + 280));
+  const WORLD_WIDTH = 1040;
 
   function distribute(items, startY) {
     if (!items.length) return startY;
-    const perRow = Math.max(1, Math.min(8, Math.floor((WORLD_WIDTH - 120) / 204)));
+    const perRow = 4;
     const rows = Math.ceil(items.length / perRow);
     items.forEach((node, index) => {
       const row = Math.floor(index / perRow);
@@ -267,11 +271,43 @@ export default function(component) {
 
   const byType = type => nodes.filter(node => node.type === type);
   byType("project").forEach(node => { node.x = WORLD_WIDTH / 2; node.y = 88; });
-  let nextY = distribute(byType("chapter"), 230) + 82;
-  nextY = distribute(byType("scene"), nextY) + 82;
+  const chapters = byType("chapter");
+  const scenes = byType("scene");
+  const scenesByChapter = new Map(chapters.map(chapter => [chapter.id, []]));
+  edges.filter(edge => edge.type === "hierarchy").forEach(edge => {
+    const source = nodeById.get(edge.source); const target = nodeById.get(edge.target);
+    if (source?.type === "chapter" && target?.type === "scene") scenesByChapter.get(source.id)?.push(target);
+  });
+  const positionedScenes = new Set();
+  let nextY = 220;
+  let narrativeFocusHeight = 760;
+  chapters.forEach((chapter, chapterIndex) => {
+    const chapterScenes = scenesByChapter.get(chapter.id) || [];
+    chapter.x = WORLD_WIDTH / 2;
+    chapter.y = nextY;
+    const sceneStartY = nextY + 116;
+    chapterScenes.forEach((scene, index) => {
+      const row = Math.floor(index / 4);
+      const rowStart = row * 4;
+      const rowCount = Math.min(4, chapterScenes.length - rowStart);
+      const slot = index - rowStart;
+      const visualSlot = row % 2 === 0 ? slot : rowCount - slot - 1;
+      const spacing = WORLD_WIDTH / (rowCount + 1);
+      scene.x = spacing * (visualSlot + 1);
+      scene.y = sceneStartY + row * 116;
+      positionedScenes.add(scene.id);
+    });
+    const sceneRows = Math.max(1, Math.ceil(chapterScenes.length / 4));
+    nextY = sceneStartY + sceneRows * 116 + 74;
+    if (chapterIndex === 0) narrativeFocusHeight = Math.max(760, nextY);
+  });
+  const orphanScenes = scenes.filter(scene => !positionedScenes.has(scene.id));
+  nextY = distribute(orphanScenes, nextY) + (orphanScenes.length ? 82 : 0);
   nextY = distribute(byType("character"), nextY) + 88;
   nextY = distribute(byType("section"), nextY) + 90;
   const WORLD_HEIGHT = Math.max(760, nextY);
+  const defaultView = () => ({x: 0, y: 0, w: WORLD_WIDTH, h: Math.min(WORLD_HEIGHT, narrativeFocusHeight)});
+  const canonicalPositions = Object.fromEntries(nodes.map(node => [node.id, {x: node.x, y: node.y}]));
   if (saved.positions) nodes.forEach(node => {
     const position = saved.positions[node.id];
     if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
@@ -279,7 +315,7 @@ export default function(component) {
       node.y = Math.max(NODE_HEIGHT / 2, Math.min(WORLD_HEIGHT - NODE_HEIGHT / 2, position.y));
     }
   });
-  let view = saved.view && Number.isFinite(saved.view.w) ? saved.view : {x: 0, y: 0, w: WORLD_WIDTH, h: WORLD_HEIGHT};
+  let view = saved.view && Number.isFinite(saved.view.w) ? saved.view : defaultView();
   let selectedId = null;
 
   function saveState() {
@@ -299,7 +335,9 @@ export default function(component) {
   function updateEdge(edge) {
     const source = nodeById.get(edge.source); const target = nodeById.get(edge.target);
     if (!source || !target || !edge.element) return;
-    edge.element.setAttribute("x1", source.x); edge.element.setAttribute("y1", source.y); edge.element.setAttribute("x2", target.x); edge.element.setAttribute("y2", target.y);
+    const dx = target.x - source.x; const dy = target.y - source.y;
+    const scale = dx || dy ? Math.min((NODE_WIDTH / 2 + 3) / Math.max(Math.abs(dx), .001), (NODE_HEIGHT / 2 + 3) / Math.max(Math.abs(dy), .001)) : 0;
+    edge.element.setAttribute("x1", source.x + dx * scale); edge.element.setAttribute("y1", source.y + dy * scale); edge.element.setAttribute("x2", target.x - dx * scale); edge.element.setAttribute("y2", target.y - dy * scale);
     if (edge.labelElement) { edge.labelElement.setAttribute("x", (source.x + target.x) / 2); edge.labelElement.setAttribute("y", (source.y + target.y) / 2 - 7); }
   }
   function updateNode(node) { if (!node.element) return; node.element.setAttribute("transform", `translate(${node.x - NODE_WIDTH / 2} ${node.y - NODE_HEIGHT / 2})`); edges.filter(edge => edge.source === node.id || edge.target === node.id).forEach(updateEdge); }
@@ -307,7 +345,7 @@ export default function(component) {
   edges.forEach(edge => {
     if (!nodeById.has(edge.source) || !nodeById.has(edge.target)) return;
     const line = svgElement("line", {class: `edge edge-${edge.type}`, "data-edge-id": edge.id});
-    if (edge.directed) line.setAttribute("marker-end", "url(#arrow)");
+    if (edge.directed) line.setAttribute("marker-end", edge.type === "sequence" ? "url(#sequenceArrow)" : "url(#arrow)");
     edge.element = line; edgeLayer.appendChild(line);
     if ((edge.type === "relationship" || edge.type === "mention" || edge.type === "manual") && edge.label) {
       const label = svgElement("text", {class: "edge-label", "data-edge-id": edge.id}); label.textContent = truncate(edge.label, 24); edge.labelElement = label; edgeLabelLayer.appendChild(label);
@@ -367,6 +405,7 @@ export default function(component) {
   parentElement.querySelector("#zoomIn").addEventListener("click", () => { const rect = svg.getBoundingClientRect(); zoom(.82, rect.left + rect.width / 2, rect.top + rect.height / 2); });
   parentElement.querySelector("#zoomOut").addEventListener("click", () => { const rect = svg.getBoundingClientRect(); zoom(1.18, rect.left + rect.width / 2, rect.top + rect.height / 2); });
   parentElement.querySelector("#fit").addEventListener("click", () => { view = {x: 0, y: 0, w: WORLD_WIDTH, h: WORLD_HEIGHT}; applyView(); saveState(); });
+  parentElement.querySelector("#reorganize").addEventListener("click", () => { nodes.forEach(node => { const position = canonicalPositions[node.id]; node.x = position.x; node.y = position.y; updateNode(node); }); view = defaultView(); applyView(); saveState(); });
   parentElement.querySelector("#clear").addEventListener("click", clearSelection);
   parentElement.querySelector("#fullscreen").addEventListener("click", () => { if (document.fullscreenElement) document.exitFullscreen(); else shell.requestFullscreen?.(); });
   const keyboard = event => { if (event.key === "Escape" && !document.fullscreenElement) clearSelection(); };

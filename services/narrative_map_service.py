@@ -44,6 +44,7 @@ class MapNodeType(StrEnum):
 
 class MapEdgeType(StrEnum):
     HIERARCHY = "hierarchy"
+    SEQUENCE = "sequence"
     APPEARANCE = "appearance"
     RELATIONSHIP = "relationship"
     MENTION = "mention"
@@ -266,6 +267,18 @@ def get_narrative_map(
                 )
             )
 
+        for previous_scene, next_scene in zip(scenes, scenes[1:], strict=False):
+            edges.append(
+                NarrativeMapEdge(
+                    key=f"sequence:{previous_scene.id}:{next_scene.id}",
+                    source=_key(MapNodeType.SCENE, previous_scene.id),
+                    target=_key(MapNodeType.SCENE, next_scene.id),
+                    edge_type=MapEdgeType.SEQUENCE,
+                    label="Próxima cena",
+                    directed=True,
+                )
+            )
+
         for scene in scenes:
             cast = sorted(cast_by_scene[scene.id], key=lambda item: (item.name, item.id))
             nodes.append(
@@ -482,6 +495,7 @@ def get_narrative_map(
         connections: defaultdict[str, list[MapConnectionCard]] = defaultdict(list)
         edge_labels = {
             MapEdgeType.HIERARCHY: "Estrutura",
+            MapEdgeType.SEQUENCE: "Sequência narrativa",
             MapEdgeType.APPEARANCE: "Participação",
             MapEdgeType.RELATIONSHIP: "Relação",
             MapEdgeType.MENTION: "@menção automática",
@@ -498,9 +512,13 @@ def get_narrative_map(
                 if edge.directed:
                     direction = "Saída" if current_key == edge.source else "Entrada"
                 details = [edge_labels[edge.edge_type]]
-                if direction:
+                if edge.edge_type == MapEdgeType.SEQUENCE:
+                    details.append(
+                        "Próxima cena" if current_key == edge.source else "Cena anterior"
+                    )
+                elif direction:
                     details.append(direction)
-                if edge.label:
+                if edge.label and edge.edge_type != MapEdgeType.SEQUENCE:
                     details.append(edge.label)
                 connections[current_key].append(
                     MapConnectionCard(
@@ -517,7 +535,17 @@ def get_narrative_map(
                 connections=tuple(
                     sorted(
                         connections[node.key],
-                        key=lambda item: (item.label.casefold(), item.edge_key),
+                        key=lambda item: (
+                            (
+                                0
+                                if "Cena anterior" in item.subtitle
+                                else 1
+                                if item.edge_key.startswith("sequence:")
+                                else 2
+                            ),
+                            item.label.casefold(),
+                            item.edge_key,
+                        ),
                     )
                 ),
             )

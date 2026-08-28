@@ -144,6 +144,46 @@ def test_map_is_owner_scoped_and_empty_project_still_has_root(sqlite_engine: Eng
         get_narrative_map(OWNER, uuid4(), sqlite_engine)
 
 
+def test_map_connects_scenes_in_exact_narrative_order(sqlite_engine: Engine) -> None:
+    project_id = create_project(OWNER, ProjectInput(name="Cronologia"), sqlite_engine)
+    first_act = create_chapter(OWNER, project_id, ChapterInput("Ato 1", "Início"), sqlite_engine)
+    second_act = create_chapter(
+        OWNER, project_id, ChapterInput("Ato 2", "Continuação"), sqlite_engine
+    )
+    first_scene = create_scene(
+        OWNER,
+        project_id,
+        SceneInput(first_act, "Cena 1", "Primeiro fato", "Acontece primeiro."),
+        sqlite_engine,
+    )
+    second_scene = create_scene(
+        OWNER,
+        project_id,
+        SceneInput(first_act, "Cena 2", "Consequência", "Acontece depois."),
+        sqlite_engine,
+    )
+    third_scene = create_scene(
+        OWNER,
+        project_id,
+        SceneInput(second_act, "Cena 3", "Novo ato", "A história continua."),
+        sqlite_engine,
+    )
+
+    graph = get_narrative_map(OWNER, project_id, sqlite_engine)
+    sequence = [edge for edge in graph.edges if edge.edge_type == MapEdgeType.SEQUENCE]
+
+    assert [(edge.source, edge.target) for edge in sequence] == [
+        (f"scene:{first_scene}", f"scene:{second_scene}"),
+        (f"scene:{second_scene}", f"scene:{third_scene}"),
+    ]
+    assert all(edge.directed and edge.label == "Próxima cena" for edge in sequence)
+    second_scene_node = next(node for node in graph.nodes if node.entity_id == second_scene)
+    assert [connection.subtitle for connection in second_scene_node.connections[:2]] == [
+        "Sequência narrativa · Cena anterior",
+        "Sequência narrativa · Próxima cena",
+    ]
+
+
 def test_interactive_document_encodes_user_content_and_has_controls() -> None:
     project_id = UUID("11111111-1111-1111-1111-111111111111")
     graph = NarrativeMapGraph(
@@ -180,6 +220,9 @@ def test_interactive_document_encodes_user_content_and_has_controls() -> None:
     assert 'id="zoomIn"' in document
     assert 'id="zoomOut"' in document
     assert 'id="fit"' in document
+    assert 'id="reorganize"' in document
+    assert "edge-sequence" in document
+    assert "gdd-map-editor:v2" in document
     assert "pointerdown" in document
     assert "selectNode" in document
     assert "Conteúdo completo da cena" in document
