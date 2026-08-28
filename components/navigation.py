@@ -17,6 +17,7 @@ from pages import (
     home,
     ideas,
     narrative,
+    narrative_map,
     project,
     projects,
     recent,
@@ -79,6 +80,14 @@ PAGE_SPECS: tuple[PageSpec, ...] = (
         "detail",
     ),
     PageSpec(
+        "narrative_map",
+        "Mapa Narrativo",
+        "Mapa Narrativo",
+        ":material/hub:",
+        "narrative-map",
+        "detail",
+    ),
+    PageSpec(
         "settings",
         "Configurações",
         "Configurações",
@@ -106,6 +115,7 @@ def _renderers(
         "characters": characters.render,
         "character_detail": character.render,
         "narrative": narrative.render,
+        "narrative_map": narrative_map.render,
         "settings": partial(settings.render, health, on_retry),
     }
 

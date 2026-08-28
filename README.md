@@ -1,6 +1,6 @@
 # GDD Studio
 
-Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. A aplicação inclui fundação, projetos, editor hierárquico do GDD e as Etapas 1 a 4 do sistema Personagens + Árvore Narrativa.
+Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e PostgreSQL/Neon. A aplicação inclui fundação, projetos, editor hierárquico do GDD e as Etapas 1 a 5 do sistema Personagens + Árvore Narrativa.
 
 ## O que já está pronto
 
@@ -33,6 +33,8 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Aparições, primeira/última cena, capítulos e linha narrativa calculados automaticamente na ficha.
 - Relações direcionais entre personagens com tipo predefinido ou personalizado, estado, intensidade e descrição.
 - Relações iniciadas e recebidas exibidas separadamente, com edição, exclusão e integridade em cascata.
+- Mapa Narrativo interativo derivado dos dados reais de projeto, capítulos, cenas, aparições e relações.
+- Nós móveis, pan, zoom, destaque de conexões, legenda e painel detalhado com acesso às entidades.
 
 O editor do GDD e os módulos seguintes permanecem separados para as próximas etapas, sem dados mockados.
 
@@ -160,6 +162,7 @@ services/character_service.py # CRUD e consultas de personagens
 services/narrative_service.py # capítulos, cenas e ordem narrativa
 services/appearance_service.py # elenco das cenas e aparições calculadas
 services/relationship_service.py # grafo direcional entre personagens
+services/narrative_map_service.py # projeção relacional para o mapa interativo
 pages/                    # rotas pequenas e independentes
 styles/                   # design system CSS separado
 migrations/               # evolução versionada do PostgreSQL
@@ -192,11 +195,11 @@ Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snap
 - Até lá, o banco não impede sozinho uma associação de tag entre proprietários diferentes; os serviços multiusuário deverão validar ownership em toda escrita, com constraints/RLS em uma migration futura.
 - Capas usam uma URL pública; upload de arquivos exigirá armazenamento de objetos em uma etapa futura.
 - Retratos de personagens usam URL pública; upload direto ainda não possui armazenamento de objetos.
-- O mapa narrativo pertence à próxima etapa do novo sistema.
+- Pesquisa, filtros e modos de foco do mapa pertencem à próxima etapa do novo sistema.
 - O autosave ocorre quando o Streamlit sincroniza o campo — ao pausar/sair dele ou usar Ctrl+Enter — evitando uma escrita por tecla.
 - Não há dados demonstrativos nem persistência local alternativa.
 - A conexão real e a migration no Neon precisam de credenciais fornecidas por você.
 
 ## Próxima etapa do sistema narrativo
 
-A **Etapa 5 — Mapa Narrativo** transformará capítulos, cenas, aparições e relações em uma visualização interativa.
+A **Etapa 6 — Filtros e foco** adicionará pesquisa, filtros por categoria, foco em personagem/cena e destaque de caminhos.

@@ -300,6 +300,12 @@ def render() -> None:
             use_container_width=True,
         ):
             show_create_chapter_dialog(owner, project_id)
+        if st.button(
+            "Mapa Narrativo",
+            icon=":material/hub:",
+            use_container_width=True,
+        ):
+            go_to_page("narrative_map", project=str(project_id))
 
     scene_count = sum(len(chapter.scenes) for chapter in chapters)
     st.caption(
