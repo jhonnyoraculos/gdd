@@ -54,7 +54,12 @@ def _graph_structure(engine: Engine):
     scene_id = create_scene(
         OWNER,
         project_id,
-        SceneInput(chapter_id, "Igreja", "Primeiro encontro."),
+        SceneInput(
+            chapter_id,
+            "Igreja",
+            "Primeiro encontro.",
+            "## Interior\n\nO sino toca e o personagem entra.",
+        ),
         engine,
     )
     protagonist = create_character(
@@ -109,6 +114,7 @@ def test_map_assembles_real_nodes_edges_and_panel_details(sqlite_engine: Engine)
     assert f"chapter={chapter_id}" in chapter.href
     scene = next(node for node in graph.nodes if node.entity_id == scene_id)
     assert scene.items == ("Encouraçado", "Protagonista")
+    assert scene.content == "## Interior\n\nO sino toca e o personagem entra."
     assert f"scene={scene_id}" in scene.href
     protagonist_node = next(node for node in graph.nodes if node.entity_id == protagonist)
     assert protagonist_node.items == ("Igreja",)
@@ -176,3 +182,6 @@ def test_interactive_document_encodes_user_content_and_has_controls() -> None:
     assert 'id="fit"' in document
     assert "pointerdown" in document
     assert "selectNode" in document
+    assert "Conteúdo completo da cena" in document
+    assert "Limpar seleção" in document
+    assert 'svg.addEventListener("click"' not in document

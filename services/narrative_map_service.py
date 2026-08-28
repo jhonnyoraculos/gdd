@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from urllib.parse import urlencode
 from uuid import UUID
 
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, or_, select
+from sqlalchemy.orm import undefer
 
 from models import (
     Chapter,
@@ -16,6 +17,7 @@ from models import (
     CharacterRelationship,
     ContentLink,
     GddSection,
+    NarrativeMapLink,
     Project,
     Scene,
     SceneCharacter,
@@ -45,12 +47,22 @@ class MapEdgeType(StrEnum):
     APPEARANCE = "appearance"
     RELATIONSHIP = "relationship"
     MENTION = "mention"
+    MANUAL = "manual"
 
 
 @dataclass(frozen=True, slots=True)
 class MapMetric:
     label: str
     value: str
+
+
+@dataclass(frozen=True, slots=True)
+class MapConnectionCard:
+    edge_key: str
+    node_key: str
+    label: str
+    subtitle: str
+    removable: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,9 +74,11 @@ class NarrativeMapNode:
     subtitle: str | None
     description: str | None
     href: str
+    content: str | None = None
     metrics: tuple[MapMetric, ...] = ()
     items_title: str | None = None
     items: tuple[str, ...] = ()
+    connections: tuple[MapConnectionCard, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +89,7 @@ class NarrativeMapEdge:
     edge_type: MapEdgeType
     label: str | None = None
     directed: bool = False
+    removable: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,24 +161,35 @@ def get_narrative_map(
             .where(ContentLink.project_id == project_id)
             .order_by(ContentLink.created_at, ContentLink.id)
         ).all()
+        manual_links = session.scalars(
+            select(NarrativeMapLink)
+            .where(NarrativeMapLink.project_id == project_id)
+            .order_by(NarrativeMapLink.created_at, NarrativeMapLink.id)
+        ).all()
         linked_section_ids = {
             section_id
             for link in content_links
             for section_id in (link.source_section_id, link.target_section_id)
             if section_id is not None
         }
-        sections = (
-            session.scalars(
-                select(GddSection)
-                .where(
-                    GddSection.project_id == project_id,
-                    GddSection.id.in_(linked_section_ids),
-                )
-                .order_by(GddSection.position, GddSection.id)
-            ).all()
-            if linked_section_ids
-            else []
+        linked_section_ids.update(
+            section_id
+            for link in manual_links
+            for section_id in (link.source_section_id, link.target_section_id)
+            if section_id is not None
         )
+        sections = session.scalars(
+            select(GddSection)
+            .options(undefer(GddSection.content))
+            .where(
+                GddSection.project_id == project_id,
+                or_(
+                    GddSection.content != "",
+                    GddSection.id.in_(linked_section_ids),
+                ),
+            )
+            .order_by(GddSection.position, GddSection.id)
+        ).all()
 
         scenes_by_chapter: defaultdict[UUID, list[Scene]] = defaultdict(list)
         for scene in scenes:
@@ -197,6 +223,7 @@ def get_narrative_map(
                 subtitle=project.codename or project.genre or "Projeto",
                 description=project.description,
                 href=_href("project_detail", id=str(project.id)),
+                content=project.description,
                 metrics=(
                     MapMetric("Capítulos", str(len(chapters))),
                     MapMetric("Cenas", str(len(scenes))),
@@ -224,6 +251,7 @@ def get_narrative_map(
                         project=str(project_id),
                         chapter=str(chapter.id),
                     ),
+                    content=chapter.summary,
                     metrics=(MapMetric("Cenas", str(len(chapter_scenes))),),
                     items_title="Cenas",
                     items=tuple(scene.title for scene in chapter_scenes),
@@ -257,6 +285,7 @@ def get_narrative_map(
                         project=str(project_id),
                         scene=str(scene.id),
                     ),
+                    content=scene.content,
                     metrics=(
                         MapMetric("Ordem", str(max(1, scene.timeline_order // 1000))),
                         MapMetric("Personagens", str(len(cast))),
@@ -292,6 +321,18 @@ def get_narrative_map(
                         project=str(project_id),
                         id=str(character.id),
                     ),
+                    content="\n\n".join(
+                        text
+                        for text in (
+                            character.summary,
+                            character.story,
+                            character.personality,
+                            character.external_goal,
+                            character.arc_ending,
+                        )
+                        if text
+                    )
+                    or None,
                     metrics=(
                         MapMetric("Aparições", str(len(character_scenes))),
                         MapMetric("Relações", str(relationship_count[character.id])),
@@ -326,12 +367,13 @@ def get_narrative_map(
                     node_type=MapNodeType.SECTION,
                     label=section.title,
                     subtitle="Seção do GDD",
-                    description=None,
+                    description=(section.content[:500] if section.content else None),
                     href=_href(
                         "gdd_editor",
                         project=str(project_id),
                         section=str(section.id),
                     ),
+                    content=section.content or None,
                     metrics=(MapMetric("Conexões", str(len(connected_labels))),),
                     items_title="Referências",
                     items=tuple(connected_labels),
@@ -351,6 +393,7 @@ def get_narrative_map(
                     target=_key(MapNodeType.CHARACTER, appearance.character_id),
                     edge_type=MapEdgeType.APPEARANCE,
                     label=appearance.role_in_scene,
+                    removable=True,
                 )
             )
 
@@ -368,6 +411,7 @@ def get_narrative_map(
                     edge_type=MapEdgeType.RELATIONSHIP,
                     label=relationship.relationship_type,
                     directed=True,
+                    removable=True,
                 )
             )
 
@@ -403,6 +447,82 @@ def get_narrative_map(
                     directed=True,
                 )
             )
+
+        def manual_node(link: NarrativeMapLink, source: bool) -> str | None:
+            prefix = "source" if source else "target"
+            for node_type in (
+                MapNodeType.CHAPTER,
+                MapNodeType.SCENE,
+                MapNodeType.CHARACTER,
+                MapNodeType.SECTION,
+            ):
+                entity_id = getattr(link, f"{prefix}_{node_type.value}_id")
+                if entity_id is not None:
+                    return _key(node_type, entity_id)
+            return None
+
+        for link in manual_links:
+            source = manual_node(link, True)
+            target = manual_node(link, False)
+            if source is None or target is None:
+                continue
+            edges.append(
+                NarrativeMapEdge(
+                    key=f"manual:{link.id}",
+                    source=source,
+                    target=target,
+                    edge_type=MapEdgeType.MANUAL,
+                    label=link.label or "Ligação visual",
+                    directed=link.directed,
+                    removable=True,
+                )
+            )
+
+        node_by_key = {node.key: node for node in nodes}
+        connections: defaultdict[str, list[MapConnectionCard]] = defaultdict(list)
+        edge_labels = {
+            MapEdgeType.HIERARCHY: "Estrutura",
+            MapEdgeType.APPEARANCE: "Participação",
+            MapEdgeType.RELATIONSHIP: "Relação",
+            MapEdgeType.MENTION: "@menção automática",
+            MapEdgeType.MANUAL: "Ligação visual",
+        }
+        for edge in edges:
+            if edge.source not in node_by_key or edge.target not in node_by_key:
+                continue
+            for current_key, neighbor_key in (
+                (edge.source, edge.target),
+                (edge.target, edge.source),
+            ):
+                direction = ""
+                if edge.directed:
+                    direction = "Saída" if current_key == edge.source else "Entrada"
+                details = [edge_labels[edge.edge_type]]
+                if direction:
+                    details.append(direction)
+                if edge.label:
+                    details.append(edge.label)
+                connections[current_key].append(
+                    MapConnectionCard(
+                        edge_key=edge.key,
+                        node_key=neighbor_key,
+                        label=node_by_key[neighbor_key].label,
+                        subtitle=" · ".join(details),
+                        removable=edge.removable,
+                    )
+                )
+        nodes = [
+            replace(
+                node,
+                connections=tuple(
+                    sorted(
+                        connections[node.key],
+                        key=lambda item: (item.label.casefold(), item.edge_key),
+                    )
+                ),
+            )
+            for node in nodes
+        ]
 
         return NarrativeMapGraph(
             project_id=project.id,

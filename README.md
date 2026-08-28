@@ -36,8 +36,10 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Aparições, primeira/última cena, capítulos e linha narrativa calculados automaticamente na ficha.
 - Relações direcionais entre personagens com tipo predefinido ou personalizado, estado, intensidade e descrição.
 - Relações iniciadas e recebidas exibidas separadamente, com edição, exclusão e integridade em cascata.
-- Mapa Narrativo interativo derivado dos dados reais de projeto, capítulos, cenas, aparições e relações.
-- Nós móveis, pan, zoom, destaque de conexões, legenda e painel detalhado com acesso às entidades.
+- Mapa Narrativo em página ampla, com nós móveis, pan, zoom, tela cheia e seleção persistente.
+- Painel do mapa com conteúdo integral das cenas, conexões clicáveis e edição direta dos cards.
+- Criação e exclusão visual de capítulos, cenas, personagens, seções e ligações persistidas no Neon.
+- Ligações inteligentes transformam cena–personagem em elenco e personagem–personagem em relação narrativa.
 - Importador de roteiro DOCX com prévia, snapshot automático, arquivo integral no GDD e criação organizada de personagens, capítulos, cenas e conexões.
 
 O editor do GDD e os módulos seguintes permanecem separados para as próximas etapas, sem dados mockados.
@@ -210,6 +212,7 @@ tests/                    # testes rápidos isolados
 - `character_relationships` (relações direcionais personagem–personagem)
 - `gdd_section_images` (imagens WebP 480p vinculadas às seções)
 - `content_links` (conexões automáticas criadas por @menções)
+- `narrative_map_links` (ligações visuais manuais entre cards do mapa)
 
 Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snapshots usam JSONB no PostgreSQL. Seções, notas e itens de roadmap possuem revisão otimista para preparar o autosave sem sobrescritas silenciosas.
 

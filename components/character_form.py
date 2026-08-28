@@ -254,7 +254,12 @@ def _render_action_error(exc: Exception) -> None:
 
 
 @st.dialog("Novo personagem", width="large", icon=":material/person_add:")
-def show_create_character_dialog(owner: OwnerIdentity, project_id: UUID) -> None:
+def show_create_character_dialog(
+    owner: OwnerIdentity,
+    project_id: UUID,
+    *,
+    stay_on_page: bool = False,
+) -> None:
     st.caption(
         "Preencha apenas o que fizer sentido agora. Todos os campos são opcionais, exceto o nome."
     )
@@ -267,6 +272,8 @@ def show_create_character_dialog(owner: OwnerIdentity, project_id: UUID) -> None
         _render_action_error(exc)
         return
     set_flash("Personagem criado e salvo no Neon.")
+    if stay_on_page:
+        st.rerun()
     go_to_page("character_detail", project=str(project_id), id=str(character_id))
 
 

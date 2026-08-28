@@ -10,6 +10,7 @@ from models.character_relationship import CharacterRelationship
 from models.content_link import ContentLink
 from models.gdd_image import GddSectionImage
 from models.idea import Idea
+from models.narrative_map_link import NarrativeMapLink
 from models.note import Note
 from models.project import Project
 from models.reference import ProjectReference
@@ -31,6 +32,7 @@ __all__ = [
     "GddSectionImage",
     "Idea",
     "Note",
+    "NarrativeMapLink",
     "Project",
     "ProjectReference",
     "ProjectVersion",

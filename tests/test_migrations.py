@@ -28,6 +28,7 @@ def test_initial_migration_compiles_with_expected_constraint_names() -> None:
     assert "CREATE TABLE character_relationships" in sql
     assert "CREATE TABLE gdd_section_images" in sql
     assert "CREATE TABLE content_links" in sql
+    assert "CREATE TABLE narrative_map_links" in sql
     assert "CONSTRAINT fk_scenes_chapter_project FOREIGN KEY" in sql
     assert "CONSTRAINT fk_scene_characters_scene_project FOREIGN KEY" in sql
     assert "CONSTRAINT fk_scene_characters_character_project FOREIGN KEY" in sql
@@ -38,6 +39,10 @@ def test_initial_migration_compiles_with_expected_constraint_names() -> None:
     assert "CONSTRAINT uq_character_relationships_project_source_target UNIQUE" in sql
     assert "CONSTRAINT ck_content_links_one_source CHECK" in sql
     assert "CONSTRAINT ck_content_links_one_target CHECK" in sql
+    assert "CONSTRAINT ck_narrative_map_links_one_source CHECK" in sql
+    assert "CONSTRAINT ck_narrative_map_links_one_target CHECK" in sql
+    assert "CONSTRAINT uq_narrative_map_links_project_connection_key UNIQUE" in sql
+    assert "CONSTRAINT fk_narrative_map_links_source_scene_project FOREIGN KEY" in sql
     assert "CONSTRAINT uq_characters_project_normalized_name UNIQUE" in sql
     assert "CONSTRAINT ck_gdd_sections_parent_not_self CHECK" in sql
     assert "CONSTRAINT ck_ideas_converted_timestamp_consistent CHECK" in sql

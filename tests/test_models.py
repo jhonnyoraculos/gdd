@@ -30,6 +30,7 @@ EXPECTED_TABLES = {
     "character_relationships",
     "content_links",
     "gdd_section_images",
+    "narrative_map_links",
 }
 
 
