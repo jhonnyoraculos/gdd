@@ -38,6 +38,7 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Relações iniciadas e recebidas exibidas separadamente, com edição, exclusão e integridade em cascata.
 - Mapa Narrativo interativo derivado dos dados reais de projeto, capítulos, cenas, aparições e relações.
 - Nós móveis, pan, zoom, destaque de conexões, legenda e painel detalhado com acesso às entidades.
+- Importador de roteiro DOCX com prévia, snapshot automático, arquivo integral no GDD e criação organizada de personagens, capítulos, cenas e conexões.
 
 O editor do GDD e os módulos seguintes permanecem separados para as próximas etapas, sem dados mockados.
 
@@ -123,6 +124,22 @@ streamlit run app.py
 ```
 
 Abra `http://localhost:8501`. Sem `DATABASE_URL`, o app inicia normalmente e mostra a configuração necessária sem traceback ou credenciais.
+
+## Importar um roteiro DOCX
+
+Primeiro confira o plano de importação, sem alterar o banco:
+
+```bash
+python -m scripts.import_professional_gdd caminho/roteiro.docx --project UUID_DO_PROJETO
+```
+
+Depois aplique a importação:
+
+```bash
+python -m scripts.import_professional_gdd caminho/roteiro.docx --project UUID_DO_PROJETO --apply
+```
+
+Antes de gravar, o importador cria um snapshot do projeto. Conteúdo escrito manualmente é preservado, e uma nova execução atualiza somente o bloco importado.
 
 ## Testes e qualidade
 

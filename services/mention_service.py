@@ -230,6 +230,24 @@ def sync_content_links(
     """Replace automatic links for one source inside its existing transaction."""
 
     records = _target_records(session, project_id)
+    _sync_content_links_with_records(
+        session,
+        project_id,
+        source_type,
+        source_id,
+        content,
+        records,
+    )
+
+
+def _sync_content_links_with_records(
+    session: Session,
+    project_id: UUID,
+    source_type: ContentSourceType,
+    source_id: UUID,
+    content: str,
+    records: tuple[_TargetRecord, ...],
+) -> None:
     mentions = list(_resolved_mentions(records, content))
     mentions = [
         (target, token)
@@ -298,6 +316,25 @@ def sync_content_links(
                     mention_generated=True,
                 )
             )
+
+
+def sync_project_content_links(
+    session: Session,
+    project_id: UUID,
+    sources: tuple[tuple[ContentSourceType, UUID, str], ...],
+) -> None:
+    """Synchronize many project sources while loading mention targets only once."""
+
+    records = _target_records(session, project_id)
+    for source_type, source_id, content in sources:
+        _sync_content_links_with_records(
+            session,
+            project_id,
+            source_type,
+            source_id,
+            content,
+            records,
+        )
 
 
 def list_mention_targets(
