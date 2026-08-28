@@ -225,6 +225,7 @@ def test_interactive_document_encodes_user_content_and_has_controls() -> None:
     assert "gdd-map-editor:v2" in document
     assert "pointerdown" in document
     assert "selectNode" in document
+    assert "arrangeFocusedConnections" in document
     assert "Conteúdo completo da cena" in document
     assert "Limpar seleção" in document
     assert 'svg.addEventListener("click"' not in document

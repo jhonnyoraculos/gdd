@@ -317,13 +317,18 @@ export default function(component) {
   });
   let view = saved.view && Number.isFinite(saved.view.w) ? saved.view : defaultView();
   let selectedId = null;
+  const snapshotPositions = () => Object.fromEntries(nodes.map(node => [node.id, {x: node.x, y: node.y}]));
+  let overviewPositions = snapshotPositions();
+  let overviewView = {...view};
+  let focusedView = defaultView();
+  let focusMode = false;
 
   function saveState() {
     try {
       localStorage.setItem(storageKey, JSON.stringify({
         selectedId,
-        view,
-        positions: Object.fromEntries(nodes.map(node => [node.id, {x: node.x, y: node.y}])),
+        view: focusMode ? overviewView : view,
+        positions: focusMode ? overviewPositions : snapshotPositions(),
       }));
     } catch (_) {}
   }
@@ -388,9 +393,41 @@ export default function(component) {
     if (node.type !== "project") { actions.appendChild(panelButton("Editar card", "primary", () => action("edit_node", {nodeId: node.id}))); actions.appendChild(panelButton("Criar ligação", "", () => action("create_edge", {nodeId: node.id}))); actions.appendChild(panelButton("Excluir card", "danger", () => action("delete_node", {nodeId: node.id}))); }
     const open = htmlElement("a", `panel-button ${node.type === "project" ? "primary wide" : ""}`, `Abrir ${typeLabels[node.type].toLowerCase()}`); open.href = node.href; actions.appendChild(open); panel.appendChild(actions);
   }
-  function clearSelection() { selectedId = null; nodes.forEach(node => node.element?.classList.remove("is-selected", "is-dimmed")); edges.forEach(edge => { edge.element?.classList.remove("is-active", "is-dimmed"); edge.labelElement?.classList.remove("is-dimmed"); }); renderEmptyPanel(); saveState(); }
+  function arrangeFocusedConnections(selected, connectedEdges) {
+    if (!focusMode) { overviewPositions = snapshotPositions(); overviewView = {...view}; }
+    nodes.forEach(node => { const position = overviewPositions[node.id]; if (position) { node.x = position.x; node.y = position.y; } });
+    const rank = edge => edge.type === "sequence" ? (edge.target === selected.id ? 0 : 1) : edge.type === "hierarchy" ? 2 : edge.type === "appearance" ? 3 : edge.type === "relationship" ? 4 : edge.type === "mention" ? 5 : 6;
+    const neighborDetails = new Map();
+    connectedEdges.forEach(edge => {
+      const neighborId = edge.source === selected.id ? edge.target : edge.source;
+      const current = neighborDetails.get(neighborId);
+      if (!current || rank(edge) < current.rank) neighborDetails.set(neighborId, {node: nodeById.get(neighborId), rank: rank(edge)});
+    });
+    const neighbors = [...neighborDetails.values()].filter(item => item.node).sort((a, b) => a.rank - b.rank || a.node.label.localeCompare(b.node.label, "pt-BR"));
+    selected.x = WORLD_WIDTH / 2; selected.y = 108;
+    const startY = 270; const perRow = 4;
+    neighbors.forEach((item, index) => {
+      const row = Math.floor(index / perRow); const rowStart = row * perRow; const rowCount = Math.min(perRow, neighbors.length - rowStart); const slot = index - rowStart; const spacing = WORLD_WIDTH / (rowCount + 1);
+      item.node.x = spacing * (slot + 1); item.node.y = startY + row * 116;
+    });
+    const rows = Math.max(1, Math.ceil(neighbors.length / perRow));
+    focusedView = {x: 0, y: 0, w: WORLD_WIDTH, h: Math.max(600, startY + rows * 116 + 70)};
+    view = {...focusedView}; focusMode = true;
+    nodes.forEach(updateNode);
+    neighbors.forEach(item => { if (item.node.element) nodeLayer.appendChild(item.node.element); });
+    if (selected.element) nodeLayer.appendChild(selected.element);
+    applyView();
+  }
+  function clearSelection() {
+    if (focusMode) {
+      nodes.forEach(node => { const position = overviewPositions[node.id]; if (position) { node.x = position.x; node.y = position.y; } updateNode(node); });
+      view = {...overviewView}; focusMode = false; applyView();
+    }
+    selectedId = null; nodes.forEach(node => node.element?.classList.remove("is-selected", "is-dimmed")); edges.forEach(edge => { edge.element?.classList.remove("is-active", "is-dimmed"); edge.labelElement?.classList.remove("is-dimmed"); }); renderEmptyPanel(); saveState();
+  }
   function selectNode(selected) {
     selectedId = selected.id; const connectedEdges = edges.filter(edge => edge.source === selected.id || edge.target === selected.id); const connectedNodes = new Set([selected.id]); connectedEdges.forEach(edge => { connectedNodes.add(edge.source); connectedNodes.add(edge.target); });
+    arrangeFocusedConnections(selected, connectedEdges);
     nodes.forEach(node => { node.element?.classList.toggle("is-selected", node.id === selected.id); node.element?.classList.toggle("is-dimmed", !connectedNodes.has(node.id)); });
     edges.forEach(edge => { const active = connectedEdges.includes(edge); edge.element?.classList.toggle("is-active", active); edge.element?.classList.toggle("is-dimmed", !active); edge.labelElement?.classList.toggle("is-dimmed", !active); });
     renderPanel(selected); saveState();
@@ -404,8 +441,8 @@ export default function(component) {
   svg.addEventListener("wheel", event => { event.preventDefault(); zoom(event.deltaY > 0 ? 1.12 : .88, event.clientX, event.clientY); }, {passive: false});
   parentElement.querySelector("#zoomIn").addEventListener("click", () => { const rect = svg.getBoundingClientRect(); zoom(.82, rect.left + rect.width / 2, rect.top + rect.height / 2); });
   parentElement.querySelector("#zoomOut").addEventListener("click", () => { const rect = svg.getBoundingClientRect(); zoom(1.18, rect.left + rect.width / 2, rect.top + rect.height / 2); });
-  parentElement.querySelector("#fit").addEventListener("click", () => { view = {x: 0, y: 0, w: WORLD_WIDTH, h: WORLD_HEIGHT}; applyView(); saveState(); });
-  parentElement.querySelector("#reorganize").addEventListener("click", () => { nodes.forEach(node => { const position = canonicalPositions[node.id]; node.x = position.x; node.y = position.y; updateNode(node); }); view = defaultView(); applyView(); saveState(); });
+  parentElement.querySelector("#fit").addEventListener("click", () => { view = focusMode ? {...focusedView} : {x: 0, y: 0, w: WORLD_WIDTH, h: WORLD_HEIGHT}; applyView(); saveState(); });
+  parentElement.querySelector("#reorganize").addEventListener("click", () => { focusMode = false; nodes.forEach(node => { const position = canonicalPositions[node.id]; node.x = position.x; node.y = position.y; updateNode(node); }); view = defaultView(); overviewPositions = snapshotPositions(); overviewView = {...view}; applyView(); clearSelection(); });
   parentElement.querySelector("#clear").addEventListener("click", clearSelection);
   parentElement.querySelector("#fullscreen").addEventListener("click", () => { if (document.fullscreenElement) document.exitFullscreen(); else shell.requestFullscreen?.(); });
   const keyboard = event => { if (event.key === "Escape" && !document.fullscreenElement) clearSelection(); };
