@@ -89,13 +89,18 @@ def _project_fields(project: ProjectDetails | None, form_key: str) -> ProjectInp
             height=110,
             placeholder="Qual é a essência deste jogo?",
         )
-        cover_url = st.text_input(
-            "URL da capa",
-            value=(project.cover_url or "") if project else "",
-            max_chars=2048,
-            placeholder="https://...",
-            help="Nesta etapa, a capa usa uma imagem hospedada em uma URL pública.",
+        current_cover = project.cover_source if project else None
+        if current_cover:
+            st.image(current_cover, caption="Capa atual", width="stretch")
+        cover_upload = st.file_uploader(
+            "Imagem da capa",
+            type=["png", "jpg", "jpeg", "webp"],
+            max_upload_size=3,
+            help="Envie uma imagem PNG, JPG ou WebP de até 3 MB.",
         )
+        remove_cover = bool(current_cover) and st.checkbox("Remover capa atual")
+        if cover_upload is not None:
+            st.image(cover_upload, caption="Nova capa", width="stretch")
         if project is None:
             template_key = st.selectbox(
                 "Estrutura inicial do GDD",
@@ -114,6 +119,23 @@ def _project_fields(project: ProjectDetails | None, form_key: str) -> ProjectInp
         )
     if not submitted:
         return None
+    if cover_upload is not None:
+        cover_url = None
+        cover_image = cover_upload.getvalue()
+        cover_image_mime = cover_upload.type
+    elif remove_cover:
+        cover_url = None
+        cover_image = None
+        cover_image_mime = None
+    elif project:
+        cover_url = project.cover_url
+        cover_image = project.cover_image
+        cover_image_mime = project.cover_image_mime
+    else:
+        cover_url = None
+        cover_image = None
+        cover_image_mime = None
+
     return ProjectInput(
         name=name,
         codename=codename,
@@ -125,6 +147,8 @@ def _project_fields(project: ProjectDetails | None, form_key: str) -> ProjectInp
         status=status,
         start_date=start_date,
         cover_url=cover_url,
+        cover_image=cover_image,
+        cover_image_mime=cover_image_mime,
         accent_color=accent_color,
         template_key=template_key,
     )

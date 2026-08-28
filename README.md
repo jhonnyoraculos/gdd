@@ -13,7 +13,7 @@ Plataforma pessoal para criar e organizar Game Design Documents com Streamlit e 
 - Testes isolados de configuração, esquema, integridade, transações, navegação, estilos e inicialização do app.
 - Criação e edição de projetos com todos os campos principais, validação e persistência real.
 - Biblioteca com pesquisa, filtro por status, ordenação e paginação.
-- Cards responsivos com capa por URL, progresso, favoritos, arquivamento e restauração.
+- Cards responsivos com upload de capa persistido no Neon, progresso, favoritos, arquivamento e restauração.
 - Página individual do projeto com indicadores, metadados e ações seguras.
 - Exclusão permanente protegida por confirmação com o nome do projeto.
 - Todas as consultas e escritas filtradas pelo proprietário configurado do workspace.
@@ -193,7 +193,7 @@ Os IDs são UUIDs. Conteúdos grandes são `Text` e carregados sob demanda. Snap
 
 - Ainda não há autenticação. Não publique o app sem proteção externa até a camada de usuários estar implementada.
 - Até lá, o banco não impede sozinho uma associação de tag entre proprietários diferentes; os serviços multiusuário deverão validar ownership em toda escrita, com constraints/RLS em uma migration futura.
-- Capas usam uma URL pública; upload de arquivos exigirá armazenamento de objetos em uma etapa futura.
+- Capas PNG, JPG e WebP de até 3 MB são armazenadas diretamente no Neon.
 - Retratos de personagens usam URL pública; upload direto ainda não possui armazenamento de objetos.
 - Pesquisa, filtros e modos de foco do mapa pertencem à próxima etapa do novo sistema.
 - O autosave ocorre quando o Streamlit sincroniza o campo — ao pausar/sair dele ou usar Ctrl+Enter — evitando uma escrita por tecla.

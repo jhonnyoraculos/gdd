@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from base64 import b64encode
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
@@ -19,6 +20,7 @@ from services.user_service import OwnerIdentity, get_or_create_owner
 from utils.constants import DEFAULT_ACCENT_COLOR, PROJECT_STATUSES
 
 MAX_PROJECTS_PER_PAGE = 48
+MAX_COVER_IMAGE_BYTES = 3 * 1024 * 1024
 _VALID_STATUSES = {option.value for option in PROJECT_STATUSES}
 _HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$")
 
@@ -54,6 +56,8 @@ class ProjectInput:
     status: str = "idea"
     start_date: date | None = None
     cover_url: str | None = None
+    cover_image: bytes | None = None
+    cover_image_mime: str | None = None
     accent_color: str = DEFAULT_ACCENT_COLOR
     template_key: str | None = None
 
@@ -67,6 +71,8 @@ class ProjectSummary:
     platform: str | None
     status: str
     cover_url: str | None
+    cover_image: bytes | None
+    cover_image_mime: str | None
     accent_color: str
     archived: bool
     favorite: bool
@@ -79,6 +85,13 @@ class ProjectSummary:
         if self.section_count == 0:
             return 0
         return round(self.finished_section_count * 100 / self.section_count)
+
+    @property
+    def cover_source(self) -> str | None:
+        if self.cover_image and self.cover_image_mime:
+            encoded = b64encode(self.cover_image).decode("ascii")
+            return f"data:{self.cover_image_mime};base64,{encoded}"
+        return self.cover_url
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +133,16 @@ def _clean_optional(value: str | None, maximum: int, field: str) -> str | None:
     return cleaned
 
 
+def _cover_image_mime(image: bytes) -> str | None:
+    if image.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if image.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if len(image) >= 12 and image.startswith(b"RIFF") and image[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 def validate_project_input(data: ProjectInput) -> ProjectInput:
     name = data.name.strip()
     if not name:
@@ -135,8 +158,19 @@ def validate_project_input(data: ProjectInput) -> ProjectInput:
     if not _HEX_COLOR.fullmatch(accent_color):
         raise ProjectValidationError("Selecione uma cor de projeto válida.")
 
+    cover_image = bytes(data.cover_image) if data.cover_image is not None else None
+    cover_image_mime = None
     cover_url = _clean_optional(data.cover_url, 2048, "A URL da capa")
-    if cover_url:
+    if cover_image:
+        if len(cover_image) > MAX_COVER_IMAGE_BYTES:
+            raise ProjectValidationError("A capa deve ter no máximo 3 MB.")
+        cover_image_mime = _cover_image_mime(cover_image)
+        if cover_image_mime is None:
+            raise ProjectValidationError("Envie a capa em formato PNG, JPG ou WebP.")
+        cover_url = None
+    elif data.cover_image_mime:
+        raise ProjectValidationError("Os dados da imagem da capa estão incompletos.")
+    elif cover_url:
         parsed = urlsplit(cover_url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ProjectValidationError("A capa deve usar uma URL http ou https válida.")
@@ -152,6 +186,8 @@ def validate_project_input(data: ProjectInput) -> ProjectInput:
         status=data.status,
         start_date=data.start_date,
         cover_url=cover_url,
+        cover_image=cover_image,
+        cover_image_mime=cover_image_mime,
         accent_color=accent_color.upper(),
         template_key=data.template_key,
     )
@@ -169,6 +205,8 @@ def _project_values(data: ProjectInput) -> dict[str, object]:
         "status": data.status,
         "start_date": data.start_date,
         "cover_url": data.cover_url,
+        "cover_image": data.cover_image,
+        "cover_image_mime": data.cover_image_mime,
         "accent_color": data.accent_color,
         "template_key": data.template_key,
     }
@@ -353,6 +391,8 @@ def list_projects(
                 platform=project.platform,
                 status=project.status,
                 cover_url=project.cover_url,
+                cover_image=project.cover_image,
+                cover_image_mime=project.cover_image_mime,
                 accent_color=project.accent_color,
                 archived=project.archived,
                 favorite=project.favorite,
@@ -438,6 +478,8 @@ def get_project(
             engine=project.engine,
             status=project.status,
             cover_url=project.cover_url,
+            cover_image=project.cover_image,
+            cover_image_mime=project.cover_image_mime,
             accent_color=project.accent_color,
             start_date=project.start_date,
             archived=project.archived,

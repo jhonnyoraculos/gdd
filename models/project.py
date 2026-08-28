@@ -6,7 +6,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base, TimestampMixin, UuidPrimaryKeyMixin
@@ -49,6 +49,8 @@ class Project(UuidPrimaryKeyMixin, TimestampMixin, Base):
     template_key: Mapped[str | None] = mapped_column(String(80), nullable=True)
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    cover_image: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    cover_image_mime: Mapped[str | None] = mapped_column(String(32), nullable=True)
     accent_color: Mapped[str] = mapped_column(
         String(9),
         nullable=False,

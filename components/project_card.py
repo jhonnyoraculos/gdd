@@ -24,10 +24,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 def _cover_markup(project: ProjectSummary) -> str:
-    if project.cover_url:
+    cover_source = project.cover_source
+    if cover_source:
         return (
             '<img class="gdd-project-card__cover-image" '
-            f'src="{escape(project.cover_url, quote=True)}" '
+            f'src="{escape(cover_source, quote=True)}" '
             f'alt="Capa de {escape(project.name, quote=True)}" loading="lazy">'
         )
     initial = escape(project.name[:1].upper() or "G")

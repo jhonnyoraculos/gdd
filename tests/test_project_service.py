@@ -140,6 +140,30 @@ def test_project_aggregates_and_progress(sqlite_engine: Engine) -> None:
     assert project.scene_count == 1
 
 
+def test_uploaded_cover_round_trip_and_source(sqlite_engine: Engine) -> None:
+    image = b"\x89PNG\r\n\x1a\n" + b"project-cover"
+    project_id = create_project(
+        OWNER,
+        ProjectInput(
+            name="Projeto com capa",
+            cover_image=image,
+            cover_image_mime="application/octet-stream",
+        ),
+        sqlite_engine,
+    )
+
+    project = get_project(OWNER, project_id, sqlite_engine)
+    assert project.cover_url is None
+    assert project.cover_image == image
+    assert project.cover_image_mime == "image/png"
+    assert project.cover_source is not None
+    assert project.cover_source.startswith("data:image/png;base64,")
+
+    listed = list_projects(OWNER, engine=sqlite_engine).items[0]
+    assert listed.cover_image == image
+    assert listed.cover_source == project.cover_source
+
+
 @pytest.mark.parametrize(
     "data",
     [
@@ -147,6 +171,11 @@ def test_project_aggregates_and_progress(sqlite_engine: Engine) -> None:
         ProjectInput(name="Projeto", status="unknown"),
         ProjectInput(name="Projeto", accent_color="red"),
         ProjectInput(name="Projeto", cover_url="javascript:alert(1)"),
+        ProjectInput(name="Projeto", cover_image=b"not-an-image"),
+        ProjectInput(
+            name="Projeto",
+            cover_image=b"\x89PNG\r\n\x1a\n" + b"x" * (3 * 1024 * 1024),
+        ),
     ],
 )
 def test_invalid_project_input_is_rejected(

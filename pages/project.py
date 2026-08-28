@@ -37,10 +37,11 @@ def _project_id() -> UUID | None:
 
 
 def _cover(project: ProjectDetails) -> str:
-    if project.cover_url:
+    cover_source = project.cover_source
+    if cover_source:
         return (
             '<img class="gdd-project-hero__image" '
-            f'src="{escape(project.cover_url, quote=True)}" '
+            f'src="{escape(cover_source, quote=True)}" '
             f'alt="Capa de {escape(project.name, quote=True)}">'
         )
     return (
