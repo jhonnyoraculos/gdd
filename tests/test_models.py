@@ -31,6 +31,7 @@ EXPECTED_TABLES = {
     "content_links",
     "gdd_section_images",
     "narrative_map_links",
+    "narrative_map_edge_decorations",
 }
 
 

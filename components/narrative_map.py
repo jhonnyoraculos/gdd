@@ -58,6 +58,9 @@ def _graph_data(
                         "label": connection.label,
                         "subtitle": connection.subtitle,
                         "removable": connection.removable,
+                        "sortOrder": connection.sort_order,
+                        "image": connection.image_source,
+                        "imageCaption": connection.image_caption,
                     }
                     for connection in node.connections
                 ],
@@ -73,6 +76,9 @@ def _graph_data(
                 "label": edge.label,
                 "directed": edge.directed,
                 "removable": edge.removable,
+                "sortOrder": edge.sort_order,
+                "image": edge.image_source,
+                "imageCaption": edge.image_caption,
             }
             for edge in graph.edges
         ],
@@ -127,6 +133,28 @@ _HTML = """
     </section>
     <aside id="panel" class="node-panel" aria-live="polite"></aside>
   </div>
+  <section id="documentEditor" class="document-editor" hidden aria-label="Editor de documento">
+    <header class="document-editor-header">
+      <div><span>EDITOR DE TEXTO</span><h2 id="documentEditorTitle"></h2></div>
+      <button id="documentEditorClose" type="button" aria-label="Fechar editor">×</button>
+    </header>
+    <div class="document-toolbar" aria-label="Formatação">
+      <button type="button" data-format="bold" title="Negrito (Ctrl+B)"><strong>B</strong></button>
+      <button type="button" data-format="italic" title="Itálico (Ctrl+I)"><em>I</em></button>
+      <button type="button" data-format="h1" title="Título">Título</button>
+      <button type="button" data-format="h2" title="Subtítulo">Subtítulo</button>
+      <button type="button" data-format="bullet" title="Lista com marcadores">• Lista</button>
+      <button type="button" data-format="number" title="Lista numerada">1. Lista</button>
+      <button type="button" data-format="quote" title="Citação">❝ Citação</button>
+      <button type="button" data-format="mention" title="Inserir menção">@ Menção</button>
+      <button type="button" data-format="separator" title="Separador">— Separador</button>
+    </div>
+    <div class="document-workspace"><textarea id="documentEditorBody" maxlength="2000000" spellcheck="true" aria-label="Conteúdo do documento"></textarea></div>
+    <footer class="document-editor-footer">
+      <span>Ctrl+B: negrito · Ctrl+I: itálico · o texto e as @menções continuam conectados ao mapa</span>
+      <div><button id="documentEditorCancel" type="button">Cancelar</button><button id="documentEditorSave" type="button">Salvar alterações</button></div>
+    </footer>
+  </section>
 </main>
 """
 
@@ -166,7 +194,7 @@ button, a { font: inherit; }
   color: var(--text);
   height: 1010px;
   min-height: 760px;
-  overflow: hidden;
+  overflow: hidden; position: relative;
 }
 .map-shell:fullscreen { border: 0; border-radius: 0; height: 100vh; width: 100vw; }
 .map-layout { display: grid; grid-template-columns: minmax(0, 1fr) 410px; height: 100%; min-width: 0; }
@@ -214,16 +242,33 @@ button, a { font: inherit; }
 .panel-metric strong { display: block; font-size: 16px; margin-top: 4px; overflow-wrap: anywhere; }
 .panel-items ul, .connection-list { display: grid; gap: 7px; list-style: none; margin: 0; padding: 0; }
 .panel-items li { background: var(--surface-soft); border: 1px solid var(--border); border-radius: 9px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; padding: 8px 9px; }
-.connection-card { align-items: center; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 11px; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; padding: 8px 9px; }
+.connection-card { align-items: center; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 11px; display: grid; gap: 8px; grid-template-columns: 62px minmax(0, 1fr); padding: 8px 9px; }
+.connection-thumbnail { align-items: center; align-self: stretch; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border: 1px dashed var(--border); border-radius: 9px; color: var(--muted); cursor: pointer; display: flex; font-size: 18px; justify-content: center; min-height: 48px; overflow: hidden; padding: 0; }
+.connection-thumbnail img { height: 100%; max-height: 58px; object-fit: cover; width: 100%; }
 .connection-select { background: transparent; border: 0; color: var(--text); cursor: pointer; min-width: 0; padding: 0; text-align: left; }
 .connection-select strong, .connection-select span { display: block; overflow-wrap: anywhere; } .connection-select strong { font-size: 12px; } .connection-select span { color: var(--muted); font-size: 10px; margin-top: 3px; }
-.connection-delete { background: transparent; border: 1px solid color-mix(in srgb, var(--danger) 32%, var(--border)); border-radius: 8px; color: var(--danger); cursor: pointer; height: 30px; width: 30px; }
+.connection-tools { display: flex; gap: 5px; grid-column: 1 / -1; justify-content: flex-end; }
+.connection-tool, .connection-delete { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; height: 30px; min-width: 30px; padding: 0 7px; }
+.connection-tool:disabled { cursor: default; opacity: .3; } .connection-delete { border-color: color-mix(in srgb, var(--danger) 32%, var(--border)); color: var(--danger); }
 .panel-actions { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 22px; }
 .panel-button { min-height: 42px; text-decoration: none; }
 .panel-button.primary { background: var(--accent); border-color: transparent; color: white; }
 .panel-button.danger { color: var(--danger); }
 .panel-button.wide { grid-column: 1 / -1; }
 .panel-empty { color: var(--muted); line-height: 1.6; margin-top: 12px; }
+.document-editor { background: #e9e9ed; color: #202124; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; inset: 0; position: absolute; z-index: 20; }
+.document-editor[hidden] { display: none; }
+.document-editor-header { align-items: center; background: #fff; border-bottom: 1px solid #d7d8dd; display: flex; justify-content: space-between; padding: 15px 22px; }
+.document-editor-header span { color: #6b6e78; font-size: 9px; font-weight: 800; letter-spacing: 1px; } .document-editor-header h2 { font-size: 20px; margin: 3px 0 0; }
+.document-editor-header button { background: transparent; border: 0; color: #555963; cursor: pointer; font-size: 28px; }
+.document-toolbar { align-items: center; background: #fff; border-bottom: 1px solid #d7d8dd; display: flex; flex-wrap: wrap; gap: 5px; padding: 9px 22px; }
+.document-toolbar button, .document-editor-footer button { background: #fff; border: 1px solid #d7d8dd; border-radius: 7px; color: #25272e; cursor: pointer; min-height: 34px; padding: 0 10px; }
+.document-toolbar button:hover { background: #f1efff; border-color: var(--accent); }
+.document-workspace { overflow: auto; padding: 28px; }
+#documentEditorBody { background: #fff; border: 0; border-radius: 2px; box-shadow: 0 6px 22px rgba(31, 33, 43, .14); color: #202124; display: block; font: 16px/1.7 Aptos, Calibri, Arial, sans-serif; margin: 0 auto; min-height: 100%; outline: 0; padding: 64px 72px; resize: none; width: min(900px, 100%); }
+.document-editor-footer { align-items: center; background: #fff; border-top: 1px solid #d7d8dd; display: flex; gap: 12px; justify-content: space-between; padding: 11px 22px; }
+.document-editor-footer span { color: #6b6e78; font-size: 11px; } .document-editor-footer div { display: flex; gap: 7px; }
+#documentEditorSave { background: var(--accent); border-color: var(--accent); color: white; font-weight: 750; }
 @media (max-width: 850px) { .map-shell { height: 1180px; } .map-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: 650px 530px; } .node-panel { border-left: 0; border-top: 1px solid var(--border); padding: 18px 16px; } .map-legend { bottom: 10px; left: 10px; right: 10px; } .map-controls { left: 10px; top: 10px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
 """
@@ -239,6 +284,9 @@ export default function(component) {
   const edgeLabelLayer = parentElement.querySelector("#edgeLabelLayer");
   const nodeLayer = parentElement.querySelector("#nodeLayer");
   const panel = parentElement.querySelector("#panel");
+  const documentEditor = parentElement.querySelector("#documentEditor");
+  const documentEditorTitle = parentElement.querySelector("#documentEditorTitle");
+  const documentEditorBody = parentElement.querySelector("#documentEditorBody");
   const NS = "http://www.w3.org/2000/svg";
   const NODE_WIDTH = 184;
   const NODE_HEIGHT = 70;
@@ -377,6 +425,31 @@ export default function(component) {
     panel.appendChild(htmlElement("p", "panel-empty", "Selecione um card para ler seu conteúdo completo, editar, excluir ou criar ligações. A seleção permanecerá ativa até você limpá-la."));
   }
   function panelButton(label, className, handler) { const button = htmlElement("button", `panel-button ${className || ""}`, label); button.type = "button"; button.addEventListener("click", handler); return button; }
+  let editorNode = null;
+  function closeDocumentEditor() { editorNode = null; documentEditor.hidden = true; }
+  function openDocumentEditor(node) { editorNode = node; documentEditorTitle.textContent = node.label; documentEditorBody.value = node.content || node.description || ""; documentEditor.hidden = false; requestAnimationFrame(() => { documentEditorBody.focus(); documentEditorBody.setSelectionRange(0, 0); documentEditorBody.scrollTop = 0; }); }
+  function replaceEditorSelection(replacement, cursorOffset = null) {
+    const start = documentEditorBody.selectionStart; const end = documentEditorBody.selectionEnd;
+    documentEditorBody.setRangeText(replacement, start, end, "end");
+    if (cursorOffset !== null) documentEditorBody.setSelectionRange(start + cursorOffset, start + cursorOffset);
+    documentEditorBody.focus();
+  }
+  function formatEditor(command) {
+    const start = documentEditorBody.selectionStart; const end = documentEditorBody.selectionEnd; const value = documentEditorBody.value; const selected = value.slice(start, end);
+    if (command === "bold") { replaceEditorSelection(`**${selected || "texto em negrito"}**`, selected ? null : 2); return; }
+    if (command === "italic") { replaceEditorSelection(`*${selected || "texto em itálico"}*`, selected ? null : 1); return; }
+    if (command === "mention") { replaceEditorSelection(`@${selected || "nome"}`, selected ? null : 1); return; }
+    if (command === "separator") { replaceEditorSelection("\n\n---\n\n"); return; }
+    const lineStart = value.lastIndexOf("\n", start - 1) + 1; const lineEndAt = value.indexOf("\n", end); const lineEnd = lineEndAt === -1 ? value.length : lineEndAt; const lines = value.slice(lineStart, lineEnd).split("\n");
+    const prefix = command === "h1" ? "# " : command === "h2" ? "## " : command === "bullet" ? "- " : command === "quote" ? "> " : "";
+    const replacement = lines.map((line, index) => command === "number" ? `${index + 1}. ${line}` : `${prefix}${line}`).join("\n");
+    documentEditorBody.setRangeText(replacement, lineStart, lineEnd, "select"); documentEditorBody.focus();
+  }
+  parentElement.querySelectorAll("[data-format]").forEach(button => button.addEventListener("click", () => formatEditor(button.dataset.format)));
+  parentElement.querySelector("#documentEditorClose").addEventListener("click", closeDocumentEditor);
+  parentElement.querySelector("#documentEditorCancel").addEventListener("click", closeDocumentEditor);
+  parentElement.querySelector("#documentEditorSave").addEventListener("click", () => { if (editorNode) action("save_content", {nodeId: editorNode.id, content: documentEditorBody.value}); });
+  documentEditorBody.addEventListener("keydown", event => { if ((event.ctrlKey || event.metaKey) && ["b", "i"].includes(event.key.toLowerCase())) { event.preventDefault(); formatEditor(event.key.toLowerCase() === "b" ? "bold" : "italic"); } });
   function renderPanel(node) {
     panel.replaceChildren(); panel.appendChild(htmlElement("p", "panel-eyebrow", typeLabels[node.type])); panel.appendChild(htmlElement("h2", "", node.label));
     if (node.subtitle) panel.appendChild(htmlElement("p", "panel-subtitle", node.subtitle));
@@ -385,18 +458,28 @@ export default function(component) {
     if (node.content && node.content !== node.description) { const section = htmlElement("section", "panel-content"); section.appendChild(htmlElement("h3", "", node.type === "scene" ? "Conteúdo completo da cena" : "Conteúdo completo")); section.appendChild(htmlElement("div", "panel-content-body", node.content)); panel.appendChild(section); }
     if (node.connections?.length) {
       const section = htmlElement("section", "panel-connections"); section.appendChild(htmlElement("h3", "", `Conexões (${node.connections.length})`)); const list = htmlElement("div", "connection-list");
-      node.connections.forEach(connection => { const card = htmlElement("div", "connection-card"); const select = htmlElement("button", "connection-select"); select.type = "button"; select.appendChild(htmlElement("strong", "", connection.label)); select.appendChild(htmlElement("span", "", connection.subtitle)); select.addEventListener("click", () => { const target = nodeById.get(connection.nodeId); if (target) selectNode(target); }); card.appendChild(select);
-        if (connection.removable) { const remove = htmlElement("button", "connection-delete", "×"); remove.type = "button"; remove.title = "Excluir ligação"; remove.setAttribute("aria-label", `Excluir ligação com ${connection.label}`); remove.addEventListener("click", event => { event.stopPropagation(); action("delete_edge", {nodeId: node.id, edgeId: connection.edgeId}); }); card.appendChild(remove); }
-        list.appendChild(card); }); section.appendChild(list); panel.appendChild(section);
+      node.connections.forEach((connection, index) => {
+        const card = htmlElement("div", "connection-card");
+        const thumbnail = htmlElement("button", "connection-thumbnail", connection.image ? null : "🖼"); thumbnail.type = "button"; thumbnail.title = connection.image ? (connection.imageCaption || "Alterar imagem") : "Adicionar imagem"; thumbnail.setAttribute("aria-label", `${thumbnail.title}: ${connection.label}`); thumbnail.addEventListener("click", () => action("edit_edge", {nodeId: node.id, edgeId: connection.edgeId}));
+        if (connection.image) { const image = htmlElement("img"); image.src = connection.image; image.alt = connection.imageCaption || `Imagem da ligação com ${connection.label}`; thumbnail.appendChild(image); }
+        card.appendChild(thumbnail);
+        const select = htmlElement("button", "connection-select"); select.type = "button"; select.appendChild(htmlElement("strong", "", connection.label)); select.appendChild(htmlElement("span", "", connection.subtitle)); select.addEventListener("click", () => { const target = nodeById.get(connection.nodeId); if (target) selectNode(target); }); card.appendChild(select);
+        const tools = htmlElement("div", "connection-tools");
+        const up = htmlElement("button", "connection-tool", "↑"); up.type = "button"; up.title = "Subir na ordem"; up.disabled = index === 0; up.addEventListener("click", () => action("move_edge", {nodeId: node.id, edgeId: connection.edgeId, direction: "up"})); tools.appendChild(up);
+        const down = htmlElement("button", "connection-tool", "↓"); down.type = "button"; down.title = "Descer na ordem"; down.disabled = index === node.connections.length - 1; down.addEventListener("click", () => action("move_edge", {nodeId: node.id, edgeId: connection.edgeId, direction: "down"})); tools.appendChild(down);
+        const media = htmlElement("button", "connection-tool", connection.image ? "Alterar imagem" : "Adicionar imagem"); media.type = "button"; media.addEventListener("click", () => action("edit_edge", {nodeId: node.id, edgeId: connection.edgeId})); tools.appendChild(media);
+        if (connection.removable) { const remove = htmlElement("button", "connection-delete", "×"); remove.type = "button"; remove.title = "Excluir ligação"; remove.setAttribute("aria-label", `Excluir ligação com ${connection.label}`); remove.addEventListener("click", event => { event.stopPropagation(); action("delete_edge", {nodeId: node.id, edgeId: connection.edgeId}); }); tools.appendChild(remove); }
+        card.appendChild(tools); list.appendChild(card);
+      }); section.appendChild(list); panel.appendChild(section);
     }
     const actions = htmlElement("div", "panel-actions");
-    if (node.type !== "project") { actions.appendChild(panelButton("Editar card", "primary", () => action("edit_node", {nodeId: node.id}))); actions.appendChild(panelButton("Criar ligação", "", () => action("create_edge", {nodeId: node.id}))); actions.appendChild(panelButton("Excluir card", "danger", () => action("delete_node", {nodeId: node.id}))); }
+    if (node.type !== "project") { if (node.type === "scene" || node.type === "section") actions.appendChild(panelButton("Editar texto", "primary", () => openDocumentEditor(node))); actions.appendChild(panelButton(node.type === "scene" || node.type === "section" ? "Editar dados" : "Editar card", node.type === "scene" || node.type === "section" ? "" : "primary", () => action("edit_node", {nodeId: node.id}))); actions.appendChild(panelButton("Criar ligação", "", () => action("create_edge", {nodeId: node.id}))); actions.appendChild(panelButton("Excluir card", "danger", () => action("delete_node", {nodeId: node.id}))); }
     const open = htmlElement("a", `panel-button ${node.type === "project" ? "primary wide" : ""}`, `Abrir ${typeLabels[node.type].toLowerCase()}`); open.href = node.href; actions.appendChild(open); panel.appendChild(actions);
   }
   function arrangeFocusedConnections(selected, connectedEdges) {
     if (!focusMode) { overviewPositions = snapshotPositions(); overviewView = {...view}; }
     nodes.forEach(node => { const position = overviewPositions[node.id]; if (position) { node.x = position.x; node.y = position.y; } });
-    const rank = edge => edge.type === "sequence" ? (edge.target === selected.id ? 0 : 1) : edge.type === "hierarchy" ? 2 : edge.type === "appearance" ? 3 : edge.type === "relationship" ? 4 : edge.type === "mention" ? 5 : 6;
+    const rank = edge => Number.isFinite(edge.sortOrder) ? edge.sortOrder : 1000000 + (edge.type === "sequence" ? (edge.target === selected.id ? 0 : 1) : edge.type === "hierarchy" ? 2 : edge.type === "appearance" ? 3 : edge.type === "relationship" ? 4 : edge.type === "mention" ? 5 : 6);
     const neighborDetails = new Map();
     connectedEdges.forEach(edge => {
       const neighborId = edge.source === selected.id ? edge.target : edge.source;
@@ -445,7 +528,7 @@ export default function(component) {
   parentElement.querySelector("#reorganize").addEventListener("click", () => { focusMode = false; nodes.forEach(node => { const position = canonicalPositions[node.id]; node.x = position.x; node.y = position.y; updateNode(node); }); view = defaultView(); overviewPositions = snapshotPositions(); overviewView = {...view}; applyView(); clearSelection(); });
   parentElement.querySelector("#clear").addEventListener("click", clearSelection);
   parentElement.querySelector("#fullscreen").addEventListener("click", () => { if (document.fullscreenElement) document.exitFullscreen(); else shell.requestFullscreen?.(); });
-  const keyboard = event => { if (event.key === "Escape" && !document.fullscreenElement) clearSelection(); };
+  const keyboard = event => { if (event.key === "Escape" && !documentEditor.hidden) closeDocumentEditor(); else if (event.key === "Escape" && !document.fullscreenElement) clearSelection(); };
   document.addEventListener("keydown", keyboard);
   applyView(); const restored = [data.initialSelected, saved.selectedId].find(key => key && nodeById.has(key)); if (restored) selectNode(nodeById.get(restored)); else renderEmptyPanel();
   return () => document.removeEventListener("keydown", keyboard);

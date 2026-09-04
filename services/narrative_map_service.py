@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from base64 import b64encode
 from collections import defaultdict
 from dataclasses import dataclass, replace
 from enum import StrEnum
@@ -17,6 +18,7 @@ from models import (
     CharacterRelationship,
     ContentLink,
     GddSection,
+    NarrativeMapEdgeDecoration,
     NarrativeMapLink,
     Project,
     Scene,
@@ -64,6 +66,9 @@ class MapConnectionCard:
     label: str
     subtitle: str
     removable: bool
+    sort_order: int | None = None
+    image_source: str | None = None
+    image_caption: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,6 +96,9 @@ class NarrativeMapEdge:
     label: str | None = None
     directed: bool = False
     removable: bool = False
+    sort_order: int | None = None
+    image_source: str | None = None
+    image_caption: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,6 +174,11 @@ def get_narrative_map(
             select(NarrativeMapLink)
             .where(NarrativeMapLink.project_id == project_id)
             .order_by(NarrativeMapLink.created_at, NarrativeMapLink.id)
+        ).all()
+        decorations = session.scalars(
+            select(NarrativeMapEdgeDecoration)
+            .where(NarrativeMapEdgeDecoration.project_id == project_id)
+            .order_by(NarrativeMapEdgeDecoration.sort_order)
         ).all()
         linked_section_ids = {
             section_id
@@ -491,6 +504,30 @@ def get_narrative_map(
                 )
             )
 
+        decoration_by_key = {item.edge_key: item for item in decorations}
+        edges = [
+            replace(
+                edge,
+                sort_order=(
+                    decoration_by_key[edge.key].sort_order
+                    if edge.key in decoration_by_key
+                    else None
+                ),
+                image_source=(
+                    f"data:{decoration_by_key[edge.key].image_mime};base64,"
+                    f"{b64encode(decoration_by_key[edge.key].image_data).decode('ascii')}"
+                    if edge.key in decoration_by_key
+                    and decoration_by_key[edge.key].image_data
+                    and decoration_by_key[edge.key].image_mime
+                    else None
+                ),
+                image_caption=(
+                    decoration_by_key[edge.key].caption if edge.key in decoration_by_key else None
+                ),
+            )
+            for edge in edges
+        ]
+
         node_by_key = {node.key: node for node in nodes}
         connections: defaultdict[str, list[MapConnectionCard]] = defaultdict(list)
         edge_labels = {
@@ -527,6 +564,9 @@ def get_narrative_map(
                         label=node_by_key[neighbor_key].label,
                         subtitle=" · ".join(details),
                         removable=edge.removable,
+                        sort_order=edge.sort_order,
+                        image_source=edge.image_source,
+                        image_caption=edge.image_caption,
                     )
                 )
         nodes = [
@@ -536,6 +576,8 @@ def get_narrative_map(
                     sorted(
                         connections[node.key],
                         key=lambda item: (
+                            item.sort_order is None,
+                            item.sort_order or 0,
                             (
                                 0
                                 if "Cena anterior" in item.subtitle

@@ -226,6 +226,11 @@ def test_interactive_document_encodes_user_content_and_has_controls() -> None:
     assert "pointerdown" in document
     assert "selectNode" in document
     assert "arrangeFocusedConnections" in document
+    assert 'id="documentEditor"' in document
+    assert 'data-format="bold"' in document
+    assert 'action("save_content"' in document
+    assert 'action("edit_edge"' in document
+    assert 'action("move_edge"' in document
     assert "Conteúdo completo da cena" in document
     assert "Limpar seleção" in document
     assert 'svg.addEventListener("click"' not in document

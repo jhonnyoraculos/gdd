@@ -15,6 +15,7 @@ from components.character_form import (
     show_create_character_dialog,
     show_edit_character_dialog,
 )
+from components.feedback import set_flash
 from components.narrative_forms import (
     show_create_chapter_dialog,
     show_create_scene_dialog,
@@ -27,11 +28,21 @@ from components.narrative_map_editor import (
     show_create_map_section_dialog,
     show_delete_map_edge_dialog,
     show_delete_map_node_dialog,
+    show_edit_map_edge_dialog,
     show_edit_map_section_dialog,
 )
 from config.settings import get_settings
 from services.character_service import CharacterServiceError, get_character
-from services.gdd_service import GddServiceError, get_section, list_sections
+from services.gdd_service import (
+    GddServiceError,
+    get_section,
+    list_sections,
+    update_section_content,
+)
+from services.narrative_map_edge_service import (
+    NarrativeMapEdgeMediaError,
+    reorder_edges,
+)
 from services.narrative_map_service import (
     MapNodeType,
     NarrativeMapGraph,
@@ -42,7 +53,9 @@ from services.narrative_service import (
     ChapterDetails,
     NarrativeServiceError,
     SceneDetails,
+    SceneInput,
     list_narrative,
+    update_scene,
 )
 from services.user_service import OwnerIdentity, owner_from_settings
 from utils.navigation_state import go_to_page
@@ -158,10 +171,62 @@ def _handle_component_action(
         if edge is not None and edge.removable:
             show_delete_map_edge_dialog(owner, graph, edge)
         return
+    if kind == "edit_edge" and isinstance(edge_key, str):
+        edge = next((item for item in graph.edges if item.key == edge_key), None)
+        if edge is not None:
+            show_edit_map_edge_dialog(owner, graph, edge)
+        return
+    if kind == "move_edge" and node is not None and isinstance(edge_key, str):
+        ordered = [connection.edge_key for connection in node.connections]
+        if edge_key not in ordered:
+            return
+        index = ordered.index(edge_key)
+        direction = action.get("direction")
+        target_index = index - 1 if direction == "up" else index + 1
+        if not 0 <= target_index < len(ordered):
+            return
+        ordered[index], ordered[target_index] = ordered[target_index], ordered[index]
+        reorder_edges(
+            owner,
+            project_id,
+            tuple(ordered),
+            frozenset(item.key for item in graph.edges),
+        )
+        st.rerun()
+        return
     if node is None or node.node_type is MapNodeType.PROJECT:
         return
 
     narrative_item = _find_narrative(chapters, node.node_type, node.entity_id)
+    if kind == "save_content" and isinstance(action.get("content"), str):
+        content = action["content"]
+        if isinstance(narrative_item, SceneDetails):
+            update_scene(
+                owner,
+                project_id,
+                narrative_item.id,
+                SceneInput(
+                    narrative_item.chapter_id,
+                    narrative_item.title,
+                    narrative_item.summary,
+                    content,
+                ),
+                expected_revision=narrative_item.revision,
+            )
+        elif node.node_type is MapNodeType.SECTION:
+            section = get_section(owner, project_id, node.entity_id)
+            update_section_content(
+                owner,
+                project_id,
+                section.id,
+                content,
+                section.revision,
+            )
+        else:
+            return
+        set_flash("Texto salvo e conexões atualizadas.")
+        st.rerun()
+        return
     if kind == "edit_node":
         if isinstance(narrative_item, ChapterDetails):
             show_edit_chapter_dialog(owner, narrative_item)
@@ -263,6 +328,7 @@ def render() -> None:
     except (
         CharacterServiceError,
         GddServiceError,
+        NarrativeMapEdgeMediaError,
         NarrativeServiceError,
         SQLAlchemyError,
     ):

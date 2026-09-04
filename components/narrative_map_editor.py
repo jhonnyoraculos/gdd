@@ -28,6 +28,10 @@ from services.gdd_service import (
     update_section_content,
     update_section_metadata,
 )
+from services.narrative_map_edge_service import (
+    NarrativeMapEdgeMediaError,
+    save_edge_decoration,
+)
 from services.narrative_map_link_service import (
     NarrativeMapLinkInput,
     NarrativeMapLinkServiceError,
@@ -76,6 +80,7 @@ def _error(exc: Exception, action: str) -> None:
         CharacterServiceError,
         GddServiceError,
         NarrativeMapLinkServiceError,
+        NarrativeMapEdgeMediaError,
         NarrativeServiceError,
         RelationshipServiceError,
     )
@@ -341,6 +346,62 @@ def show_create_map_link_dialog(
         _error(exc, "create link")
         return
     set_flash(message)
+    st.rerun()
+
+
+@st.dialog("Imagem da ligação", width="large", icon=":material/add_photo_alternate:")
+def show_edit_map_edge_dialog(
+    owner: OwnerIdentity,
+    graph: NarrativeMapGraph,
+    edge: NarrativeMapEdge,
+) -> None:
+    node_by_key = {node.key: node for node in graph.nodes}
+    source = node_by_key.get(edge.source)
+    target = node_by_key.get(edge.target)
+    if source is None or target is None:
+        st.error("Os cards desta ligação não estão mais disponíveis.")
+        return
+    st.caption(f"{source.label} → {target.label}")
+    if edge.image_source:
+        st.image(edge.image_source, caption=edge.image_caption, width="stretch")
+    with st.form(f"map-edge-media-{edge.key}", border=False):
+        uploaded = st.file_uploader(
+            "Imagem",
+            type=("png", "jpg", "jpeg", "webp"),
+            help="A imagem será convertida para WebP e reduzida para até 854×480.",
+        )
+        caption = st.text_input(
+            "Legenda",
+            value=edge.image_caption or "",
+            max_chars=240,
+            placeholder="Ex.: Referência visual desta ligação",
+        )
+        remove_image = st.checkbox(
+            "Remover imagem atual",
+            disabled=not edge.image_source,
+        )
+        submitted = st.form_submit_button(
+            "Salvar imagem",
+            icon=":material/save:",
+            type="primary",
+            use_container_width=True,
+        )
+    if not submitted:
+        return
+    try:
+        save_edge_decoration(
+            owner,
+            graph.project_id,
+            edge.key,
+            frozenset(item.key for item in graph.edges),
+            caption=caption,
+            image_data=uploaded.getvalue() if uploaded else None,
+            remove_image=remove_image,
+        )
+    except (NarrativeMapEdgeMediaError, SQLAlchemyError) as exc:
+        _error(exc, "save edge image")
+        return
+    set_flash("Imagem da ligação salva em 480p.")
     st.rerun()
 
 
